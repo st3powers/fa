@@ -354,12 +354,14 @@ lter_level_bm_tag <- merge(lter_level_bm, tags, by = c("division", "genus"), all
 tags_fa_genus <- lter_level_bm_tag %>% 
   #only looking at genus-level matches
   filter(cat == "genus") %>% 
+  #rename for downstream stacking
   rename(biomass_wet_weight = bm_ww_g,
          biomass_dry_weight = bm_drw_g) %>% 
   #merge with FA genus level data
   merge(fa_genus,  
         by.x = "genus", by.y = "Genus",
         all.x = TRUE) %>% 
+  #organize columns
   select(GroupDiv, genus, cat, lakeid, winter_yr, month, season,
          biomass_wet_weight, biomass_dry_weight,
          gen_avg_sumSAFA,
@@ -383,6 +385,7 @@ names(tags_fa_genus) <- gsub("gen_avg_", "", names(tags_fa_genus))
 tags_fa_groupdiv <- lter_level_bm_tag %>% 
   #keep only those matching at groupdiv level
   filter(cat == "groupdiv") %>% 
+  #rename for downstream stacking
   rename(biomass_wet_weight = bm_ww_g,
          biomass_dry_weight = bm_drw_g) %>% 
   #merge with FA division/group level data
@@ -390,8 +393,8 @@ tags_fa_groupdiv <- lter_level_bm_tag %>%
   merge(fa_groupdiv,  
         by.x = "division", by.y = "GroupDiv",
         all.x = TRUE) %>% 
-  mutate(genus = NA) %>% 
   rename(GroupDiv = division) %>% 
+  #organize columns
   select(GroupDiv, genus, cat, lakeid, winter_yr, month, season,
          biomass_wet_weight, biomass_dry_weight,
          grpdiv_avg_sumSAFA,
