@@ -9,7 +9,7 @@ library(lubridate)
 #=============================================================================
 # ----> read in secchi data
 
-secchi_orig <- read.csv("Data/ntl31_v4.csv", stringsAsFactors = FALSE)
+secchi_orig <- read.csv("../Data/ntl31_v4.csv", stringsAsFactors = FALSE)
 
 # WARNING- to be resolved, SP's mac had a strange date import issue
 
@@ -23,7 +23,7 @@ secchi <- secchi_orig %>%
 #=============================================================================
 # ----> read in under ice data, for ice on/off timing
 
-seasons_orig <- read.csv("Data/under_ice_data.csv", stringsAsFactors = FALSE)
+seasons_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
 #keep only wisconsin, cols of interest, make start and end full dates
 seasons_wisc <- seasons_orig %>% 
@@ -124,7 +124,7 @@ ggplot(secchi_small, aes(season, secnview)) +
 #=============================================================================
 # ----> read in snow/ice
 
-icesnow_orig<-read.csv("Data/ntl34_v5.csv", stringsAsFactors = FALSE)
+icesnow_orig<-read.csv("../Data/ntl34_v5.csv", stringsAsFactors = FALSE)
 icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,totice,whiteice,blueice)
 
 #=============================================================================
@@ -149,8 +149,8 @@ light<-light %>% select(-depth)
 #=============================================================================
 # ----> read in chl
 
-chl_north_orig<-read.csv("Data/ntl35_v2.csv", stringsAsFactors = FALSE)
-chl_south_orig<-read.csv("Data/ntl38_v3.csv", stringsAsFactors = FALSE)
+chl_north_orig<-read.csv("../Data/ntl35_v2.csv", stringsAsFactors = FALSE)
+chl_south_orig<-read.csv("../Data/ntl38_v3.csv", stringsAsFactors = FALSE)
 chlr_north<-chl_north_orig %>% select(lakeid,year=year4,sampledate,depth,chl=chlor,phaeo)
 chlr_south<-chl_south_orig %>% select(lakeid,year=year4,sampledate,depth=depth_range_m,chl=tri_chl_spec,phaeo=phaeo_spec)
 chlr<-rbind(chlr_north,chlr_south)
