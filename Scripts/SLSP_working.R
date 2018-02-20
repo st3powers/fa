@@ -1,5 +1,4 @@
 #set working directory
-#setwd("D:/Labou/secchi_FA")
 
 #load packages
 library(dplyr)
