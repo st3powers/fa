@@ -24,20 +24,14 @@
 # 9) aggregate biomass to genus level
 # 10) tag LTER data with whether has matching division/Group or genus in FA data
 # 11) merge LTER with FA data (genus, division, NA matches)
-
-
-# ----> UPDATING IN PROGRESS
-# 12) weight FA data by biomass dry weight (prop FA data is % dry weight)
+# 12) weight FA data by biomass dry weight / total biomass (genus-level FA, independent of biomass)
 # 13) aggregated weighted to community level 
-#     (winter-yr/monthly, lake-specific community-level FA profile)
+
 
 
 # ============================================================== #
 ## ====================== SCRIPT BEGINS ======================= ##
 # ============================================================== #
-
-#set working directory
-setwd("D:/Labou/LTER_FA")
 
 #load packages
 library(dplyr)
