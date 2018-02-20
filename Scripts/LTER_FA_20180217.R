@@ -93,6 +93,27 @@ seasons_lakes <- seasons_wisc %>%
 # we may want to go back to raw LTER ice data to get 2014/2015/2016 iceon/iceoff dates
 
 #=============================================================================
+# ----> LTER ice duration data (for seasons)
+
+#this gets the ice, but we don't have the summer stratified period
+#(which is problematic...)
+
+#read in LTER ice duration data
+duration <- read.csv("../Data/ntl33_v4.csv", stringsAsFactors = FALSE)
+
+#look like what we need
+head(duration)
+
+#keep only relevant info
+duration_relevant <- duration %>%
+  #only interested in Mendota, Monona
+  filter(lakeid %in% c("ME", "MO")) %>% 
+  #can narrow down year range
+  filter(year4 >= 1990)
+
+#not sure what to do about this
+
+#=============================================================================
 # ----> tag data with season
 
 lter_dates_only <- lter_lakes %>% 
