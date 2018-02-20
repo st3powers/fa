@@ -1,4 +1,4 @@
-#set working directory
+#open file from within Scripts directory - downstream file paths rely on this
 
 #load packages
 library(dplyr)
