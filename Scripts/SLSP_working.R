@@ -239,19 +239,19 @@ ggplot(dataplot,aes(x=light,y=chl,color=sdsnow)) +
   facet_wrap(~lakeid,scales = "free")
 
 
-# plot chl~light, all depths
+# plot snow~light, all depths
 dataplot<-snowicechllight
 ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow)) +
   geom_point()+
   facet_wrap(~lakeid,scales = "free")
 
-# plot chl~light, depth groups
+# plot snow~light, depth groups
 dataplot<-snowicechllight.aggdepthgroups
 ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow, shape=depthgroup)) +
   geom_point()+
   facet_wrap(~lakeid,scales = "free")
 
-# plat chl~light, aggregate depths
+# plat snow~light, aggregate depths
 dataplot<-snowicechllight.aggdepths
 ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow)) +
   geom_point()+
