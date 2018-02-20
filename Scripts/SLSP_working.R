@@ -35,10 +35,14 @@ seasons_wisc <- seasons_orig %>%
   mutate(startdate = paste(startyear, startmonum, startday, sep = "-"),
          enddate = paste(endyear, endmonum, endday, sep = "-"))
 
+
 #=============================================================================
 # ----> read in snow/ice
+
 icesnow_orig<-read.csv("Data/ntl34_v5.csv")
 icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,totice,whiteice,blueice)
+
+
 #=============================================================================
 # ----> read in chl
 
@@ -51,8 +55,7 @@ chlr<-rbind(chlr_north,chlr_south)
 
 #=============================================================================
 
-
-#make lakeid to match
+#make lakeid to full lake name
 seasons_lakes <- seasons_wisc %>% 
   mutate(lakeid = ifelse(lakename == "Allequash Lake", "AL", NA),
          lakeid = ifelse(lakename == "Big Muskellunge Lake", "BM", lakeid),
