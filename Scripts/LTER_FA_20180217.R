@@ -89,6 +89,8 @@ seasons_lakes <- seasons_wisc %>%
   select(season, lakeid, year, startdate, enddate) %>% 
   filter(lakeid %in% c("ME", "MO"))
 
+# Note: we are losing the 2014/2015/2016 data by using this to subset
+# we may want to go back to raw LTER ice data to get 2014/2015/2016 iceon/iceoff dates
 
 #=============================================================================
 # ----> tag data with season
@@ -644,4 +646,4 @@ ggplot(data=filter(dat_month_long, FA_type == "SAFA_perc_avg"),
   #years
   facet_wrap(~winter_yr)
 
-#fewer samples in iceon, higher variance, when get year/year
+#fewer samples in iceon, higher variance, when look at year/year
