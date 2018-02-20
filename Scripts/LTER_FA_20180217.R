@@ -508,8 +508,17 @@ full_dat_weighted_date_FA <- full_dat_weighted_small %>%
 #   as.data.frame()
 # #doesn't quite add up to 100%, more like 95%, but not unexpected since on average
 
+#aggregate to lake/month/year/season
+full_dat_weighted_month_season_FA <- full_dat_weighted_date_FA %>% 
+  #aggregate across months within season, find average FAs
+  group_by(lakeid, winter_yr, season, month) %>% 
+  summarize(MUFA_perc_avg = mean(MUFA_perc, na.rm = TRUE),
+            PUFA_perc_avg = mean(PUFA_perc, na.rm = TRUE),
+            SAFA_perc_avg = mean(SAFA_perc, na.rm = TRUE)) %>% 
+  as.data.frame()
+
 #aggregate to lake/year/season
-full_dat_weighed_yr_season_FA <- full_dat_weighted_date_FA %>% 
+full_dat_weighted_yr_season_FA <- full_dat_weighted_date_FA %>% 
   #aggregate across months within season, find average FAs
   group_by(lakeid, winter_yr, season) %>% 
   summarize(MUFA_perc_avg = mean(MUFA_perc, na.rm = TRUE),
@@ -519,7 +528,8 @@ full_dat_weighed_yr_season_FA <- full_dat_weighted_date_FA %>%
 #note: doesn't add up to quite 100% (working with averages)
 #also, data only goes to 2013 (may need to adjust iceon/iceoff dates from raw LTER snow/ice data)
 
-summary(full_dat_weighed_yr_season_FA)
+
+summary(full_dat_weighted_yr_season_FA)
 #MUFA: 11-36
 #PUFA: 24-61
 #SAFA: 22-47
@@ -528,38 +538,61 @@ summary(full_dat_weighed_yr_season_FA)
 ## ========= END OF DATA WRANGLING - ANALYSIS BEGINS ========== ##
 # ============================================================== #
 
-#make long for plotting and analysis
-dat_long <- full_dat_weighed_yr_season_FA %>% 
+# ----> make lake/year/season data long for plotting and analysis
+dat_yr_long <- full_dat_weighted_yr_season_FA %>% 
   melt(id.vars = c("lakeid", "winter_yr", "season")) %>% 
   rename(FA_type = variable, FA_avg_perc = value)
 
+#check out data
+head(dat_yr_long)
+
 #plot it up
-ggplot(dat_long, aes(season, FA_avg_perc)) +
+ggplot(dat_yr_long, aes(season, FA_avg_perc)) +
   geom_boxplot() +
   geom_jitter(width = 0.1, aes(color = lakeid)) +
   facet_wrap(~FA_type)
 #MUFA shows no diff, but PUFA/SAFA do:
 #PUFA higher in winter, SAFA higher in summer
-
-head(dat_long)
   
 #try ANOVAs - looking at lakes together
 
 #MUFA
-mufa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_long, FA_type == "MUFA_perc_avg"))
+mufa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_yr_long, FA_type == "MUFA_perc_avg"))
 summary(mufa1) #p=0.175- does not differ by season
 
 #PUFA
-pufa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_long, FA_type == "PUFA_perc_avg"))
+pufa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_yr_long, FA_type == "PUFA_perc_avg"))
 summary(pufa1) #p<<0.001 (PUFA signif higher in winter)
 
 #SAFA
-safa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_long, FA_type == "SAFA_perc_avg"))
+safa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_yr_long, FA_type == "SAFA_perc_avg"))
 summary(safa1) #p<<0.001 (SAFA signif higher in winter)
 
-#what is split lakes?
-ggplot(dat_long, aes(season, FA_avg_perc)) +
+#what if split lakes?
+ggplot(dat_yr_long, aes(season, FA_avg_perc)) +
   geom_boxplot() +
   geom_jitter(width = 0.1, aes(color = lakeid)) +
   facet_grid(lakeid~FA_type)
 #same trends - MUFA no diff, PUFA higher in winter, SAFA higher in summer
+
+# ----> check out months within seasons
+
+#make long
+dat_month_long <- full_dat_weighted_month_season_FA %>% 
+  melt(id.vars = c("lakeid", "winter_yr", "season", "month")) %>% 
+  rename(FA_type = variable, FA_avg_perc = value)
+
+#check out
+head(dat_month_long)
+
+#plot FA by category and month, between seasons, colored by lake
+ggplot(dat_month_long, aes(month, FA_avg_perc, group = month)) +
+  geom_boxplot() +
+  geom_point(aes(color = lakeid)) +
+  facet_grid(season ~ FA_type)
+
+#together, colored by season not lake
+ggplot(dat_month_long, aes(month, FA_avg_perc, group = month)) +
+  geom_boxplot() +
+  geom_point(aes(color = season)) +
+  facet_wrap(~FA_type)
