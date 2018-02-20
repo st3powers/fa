@@ -7,7 +7,8 @@ library(ggplot2)
 library(lubridate)
 
 #=============================================================================
-#read in secchi data
+# ----> read in secchi data
+
 secchi_orig <- read.csv("Data/ntl31_v4.csv", stringsAsFactors = FALSE)
 
 # WARNING- to be resolved, SP's mac had a strange date import issue
@@ -18,8 +19,10 @@ secchi <- secchi_orig %>%
   select(-sampledate) %>% 
   rename(year = year4)
 
+
 #=============================================================================
 # ----> read in under ice data, for ice on/off timing
+
 seasons_orig <- read.csv("Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
 #keep only wisconsin, cols of interest, make start and end full dates
@@ -34,6 +37,88 @@ seasons_wisc <- seasons_orig %>%
          endmonum = match(endmonth, month.abb)) %>% 
   mutate(startdate = paste(startyear, startmonum, startday, sep = "-"),
          enddate = paste(endyear, endmonum, endday, sep = "-"))
+
+#make lakeid to full lake name
+seasons_lakes <- seasons_wisc %>% 
+  mutate(lakeid = ifelse(lakename == "Allequash Lake", "AL", NA),
+         lakeid = ifelse(lakename == "Big Muskellunge Lake", "BM", lakeid),
+         lakeid = ifelse(lakename == "Crystal Bog", "CB", lakeid),
+         lakeid = ifelse(lakename == "Crystal Lake", "CR", lakeid),
+         lakeid = ifelse(lakename == "Fish Lake", "FI", lakeid),
+         lakeid = ifelse(lakename == "Lake Mendota", "ME", lakeid),
+         lakeid = ifelse(lakename == "Lake Monona", "MO", lakeid),
+         lakeid = ifelse(lakename == "Lake Wingra", "WI", lakeid),
+         lakeid = ifelse(lakename == "Sparkling Lake", "SP", lakeid),
+         lakeid = ifelse(lakename == "Trout Bog", "TB", lakeid),
+         lakeid = ifelse(lakename == "Trout Lake", "TR", lakeid)) %>% 
+  select(season, lakeid, year, startdate, enddate)
+
+#=============================================================================
+# ----> tag secchi data with season
+
+secchi_dates_only <- secchi %>% 
+  select(lakeid, year, date) %>% 
+  unique() %>% 
+  rename(sample_year = year) %>% 
+  arrange(lakeid, sample_year)
+
+seasons_lakes_wide <- seasons_lakes %>% 
+  melt(id.vars = c("lakeid", "year", "season"), variable.name = "category", value.name = "date") %>% 
+  mutate(seasons_category = paste(season, category, sep = "_")) %>% 
+  select(-season, -category) %>% 
+  dcast(lakeid + year ~ seasons_category, value.var = "date") %>% 
+  rename(winter_yr = year) %>% 
+  select(lakeid, winter_yr, iceon_startdate, iceon_enddate, iceoff_startdate, iceoff_enddate)
+
+#we're only interested in iceon/iceoff
+secchi_seasons_pre <- merge(secchi_dates_only, seasons_lakes_wide,
+                            by = c("lakeid"), all.x = TRUE) %>% 
+  #tag seasons
+  mutate(season = ifelse(date >= iceon_startdate & date <= iceon_enddate, "iceon", NA),
+         season = ifelse(date >= iceoff_startdate & date <= iceoff_enddate, "iceoff", season)) %>% 
+  #keep only samples that fall within iceon or iceoff
+  filter(!is.na(season))
+
+#merge back to full secchi data
+secchi_seasons <- secchi_seasons_pre %>% 
+  #group things by *winter* year
+  select(lakeid, date, winter_yr, season) %>% 
+  merge(secchi, by = c("lakeid", "date")) %>% 
+  select(-year)
+
+#sanity check
+# secchi_seasons %>% 
+#   select(season, ice) %>% 
+#   unique()
+
+# filter(secchi_seasons, season == "iceon" & is.na(ice)) %>% filter(lakeid == "ME")
+# filter(seasons_lakes_wide, lakeid == "ME" & winter_yr == 2001) #yep, is iceon by our dates
+# filter(seasons_lakes_wide, lakeid == "ME" & winter_yr == 2013) #yep, same, ice
+#yes, there are some legitimate occasions when season is winter but ice is NA
+
+#=============================================================================
+# ----> check out secchi data
+
+secchi_small <- select(secchi_seasons, lakeid, date, winter_yr, season, secview, secnview)
+
+#secview is with viewer
+#secnview is without viewer
+
+ggplot(secchi_small, aes(season, secview)) +
+  geom_boxplot() +
+  geom_point() +
+  facet_wrap(~lakeid)
+
+secchi_small %>% 
+  filter(lakeid %in% c("MO", "ME"))
+
+ggplot(secchi_small, aes(season, secnview)) +
+  geom_boxplot() +
+  geom_point() +
+  facet_wrap(~lakeid)
+
+#most data points for secnview
+#or take average of secview, secnview
 
 
 #=============================================================================
@@ -52,90 +137,6 @@ chlr_north<-chl_north_orig %>% select(lakeid,year=year4,sampledate,depth,chl=chl
 chlr_south<-chl_south_orig %>% select(lakeid,year=year4,sampledate,depth=depth_range_m,chl=tri_chl_spec,phaeo=phaeo_spec)
 chlr<-rbind(chlr_north,chlr_south)
 
-
-#=============================================================================
-
-#make lakeid to full lake name
-seasons_lakes <- seasons_wisc %>% 
-  mutate(lakeid = ifelse(lakename == "Allequash Lake", "AL", NA),
-         lakeid = ifelse(lakename == "Big Muskellunge Lake", "BM", lakeid),
-         lakeid = ifelse(lakename == "Crystal Bog", "CB", lakeid),
-         lakeid = ifelse(lakename == "Crystal Lake", "CR", lakeid),
-         lakeid = ifelse(lakename == "Fish Lake", "FI", lakeid),
-         lakeid = ifelse(lakename == "Lake Mendota", "ME", lakeid),
-         lakeid = ifelse(lakename == "Lake Monona", "MO", lakeid),
-         lakeid = ifelse(lakename == "Lake Wingra", "WI", lakeid),
-         lakeid = ifelse(lakename == "Sparkling Lake", "SP", lakeid),
-         lakeid = ifelse(lakename == "Trout Bog", "TB", lakeid),
-         lakeid = ifelse(lakename == "Trout Lake", "TR", lakeid)) %>% 
-  select(season, lakeid, year, startdate, enddate)
-
-#=============================================================================
-# ----> tag data with season
-
-secchi_dates_only <- secchi %>% 
-  select(lakeid, year, date) %>% 
-  unique() %>% 
-  rename(sample_year = year) %>% 
-  arrange(lakeid, sample_year)
-
-seasons_lakes_wide <- seasons_lakes %>% 
-  melt(id.vars = c("lakeid", "year", "season"), variable.name = "category", value.name = "date") %>% 
-  mutate(seasons_category = paste(season, category, sep = "_")) %>% 
-  select(-season, -category) %>% 
-  dcast(lakeid + year ~ seasons_category, value.var = "date") %>% 
-  rename(winter_yr = year) %>% 
-  select(lakeid, winter_yr, iceon_startdate, iceon_enddate, iceoff_startdate, iceoff_enddate)
-
-#we're only interested in iceon/iceoff
-
-secchi_seasons_pre <- merge(secchi_dates_only, seasons_lakes_wide,
-                          by = c("lakeid"), all.x = TRUE) %>% 
-  #tag seasons
-  mutate(season = ifelse(date >= iceon_startdate & date <= iceon_enddate, "iceon", NA),
-         season = ifelse(date >= iceoff_startdate & date <= iceoff_enddate, "iceoff", season)) %>% 
-  #keep only samples that fall within iceon or iceoff
-  filter(!is.na(season))
-
-#merge back to full secchi data
-secchi_seasons <- secchi_seasons_pre %>% 
-  #group things by *winter* year
-  select(lakeid, date, winter_yr, season) %>% 
-  merge(secchi, by = c("lakeid", "date")) %>% 
-  select(-year)
-
-#sanity check
-secchi_seasons %>% 
-  select(season, ice) %>% 
-  unique()
-
-# filter(secchi_seasons, season == "iceon" & is.na(ice)) %>% filter(lakeid == "ME")
-# filter(seasons_lakes_wide, lakeid == "ME" & winter_yr == 2001) #yep, is iceon by our dates
-# filter(seasons_lakes_wide, lakeid == "ME" & winter_yr == 2013) #yep, same, ice
-#yes, there are some legitimate occasions when season is winter but ice is NA
-
-#=============================================================================
-# ----> check it out
-secchi_small <- select(secchi_seasons, lakeid, date, winter_yr, season, secview, secnview)
-
-summary(secchi_small)
-#secview is with viewer
-#secnview is without viewer
-
-ggplot(secchi_small, aes(season, secview)) +
-  geom_boxplot() +
-  geom_point() +
-  facet_wrap(~lakeid)
-
-secchi_small %>% 
-  filter(lakeid %in% c("MO", "ME"))
-
-ggplot(secchi_small, aes(season, secnview)) +
-  geom_boxplot() +
-  geom_point() +
-  facet_wrap(~lakeid)
-
-#or take average of two when both are available
 
 #=============================================================================
 # chl and snow/ice
