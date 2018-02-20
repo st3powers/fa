@@ -124,22 +124,22 @@ ggplot(secchi_small, aes(season, secnview)) +
 #=============================================================================
 # ----> read in snow/ice
 
-icesnow_orig<-read.csv("Data/ntl34_v5.csv")
+icesnow_orig<-read.csv("Data/ntl34_v5.csv", stringsAsFactors = FALSE)
 icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,totice,whiteice,blueice)
 
 
 #=============================================================================
 # ----> read in chl
 
-chl_north_orig<-read.csv("Data/ntl35_v2.csv")
-chl_south_orig<-read.csv("Data/ntl38_v3.csv")
+chl_north_orig<-read.csv("Data/ntl35_v2.csv", stringsAsFactors = FALSE)
+chl_south_orig<-read.csv("Data/ntl38_v3.csv", stringsAsFactors = FALSE)
 chlr_north<-chl_north_orig %>% select(lakeid,year=year4,sampledate,depth,chl=chlor,phaeo)
 chlr_south<-chl_south_orig %>% select(lakeid,year=year4,sampledate,depth=depth_range_m,chl=tri_chl_spec,phaeo=phaeo_spec)
 chlr<-rbind(chlr_north,chlr_south)
 
 
 #=============================================================================
-# chl and snow/ice
+# combine chl and snow/ice datasets
 
 merge<-merge(icesnow,chlr, by=c("lakeid","sampledate"))
 data<-merge
