@@ -47,7 +47,7 @@ library(ggplot2)
 
 #read in, format dates so can stack ok 
 
-madison <- read.csv("Data/ntl88_v7.csv", stringsAsFactors = FALSE) %>% 
+madison <- read.csv("../Data/ntl88_v7.csv", stringsAsFactors = FALSE) %>% 
   mutate(date = as.Date(sampledate, format = "%m/%d/%Y")) %>% 
   select(-sampledate)
 
@@ -64,7 +64,7 @@ lter_lakes <- lter_lakes %>%
 
 #=============================================================================
 # ----> read in under ice data, for ice on/off timing
-seasons_orig <- read.csv("Data/under_ice_data.csv", stringsAsFactors = FALSE)
+seasons_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
 #keep only wisconsin, cols of interest, make start and end full dates
 seasons_wisc <- seasons_orig %>% 
@@ -211,7 +211,7 @@ lter_use <- lter_after_remove %>%
 # ----> read in fatty acid profiles
 
 # read in PLoS fatty acid dataset
-fa <- read.csv("Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE)
+fa <- read.csv("../Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE)
 
 #only want freshwater
 #fa %>% group_by(Salinity) %>% summarize(n = length(Salinity))
