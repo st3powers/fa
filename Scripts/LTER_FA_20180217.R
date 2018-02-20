@@ -539,6 +539,7 @@ summary(full_dat_weighted_yr_season_FA)
 # ============================================================== #
 
 # ----> make lake/year/season data long for plotting and analysis
+
 dat_yr_long <- full_dat_weighted_yr_season_FA %>% 
   melt(id.vars = c("lakeid", "winter_yr", "season")) %>% 
   rename(FA_type = variable, FA_avg_perc = value)
@@ -546,7 +547,7 @@ dat_yr_long <- full_dat_weighted_yr_season_FA %>%
 #check out data
 head(dat_yr_long)
 
-#plot it up
+#plot it up - FAs by season
 ggplot(data=dat_yr_long, aes(x=season, y=FA_avg_perc)) +
   #boxplot
   geom_boxplot() +
@@ -583,7 +584,7 @@ ggplot(data=dat_yr_long, aes(x=season, y=FA_avg_perc)) +
 
 #same trends - MUFA no diff, PUFA higher in winter, SAFA higher in summer
 
-# ----> check out months within seasons
+# ----> check out months within seasons (plots)
 
 #make long
 dat_month_long <- full_dat_weighted_month_season_FA %>% 
@@ -610,3 +611,37 @@ ggplot(data=dat_month_long, aes(x=month, y=FA_avg_perc, group = month)) +
   geom_point(aes(color = season)) +
   #split FAs to different plots
   facet_wrap(~FA_type)
+
+#confirms: PUFA down during summer, SAFA up during summer
+
+#only MUFA across years
+ggplot(data=filter(dat_month_long, FA_type == "MUFA_perc_avg"), 
+       aes(x=month, y=FA_avg_perc, group = month)) +
+  #boxplot
+  geom_boxplot() +
+  #points, colored by season
+  geom_point(aes(color = season)) +
+  #years
+  facet_wrap(~winter_yr)
+
+#only PUFA across years
+ggplot(data=filter(dat_month_long, FA_type == "PUFA_perc_avg"), 
+       aes(x=month, y=FA_avg_perc, group = month)) +
+  #boxplot
+  geom_boxplot() +
+  #points, colored by season
+  geom_point(aes(color = season)) +
+  #years
+  facet_wrap(~winter_yr)
+
+#only SAFA across years
+ggplot(data=filter(dat_month_long, FA_type == "SAFA_perc_avg"), 
+       aes(x=month, y=FA_avg_perc, group = month)) +
+  #boxplot
+  geom_boxplot() +
+  #points, colored by season
+  geom_point(aes(color = season)) +
+  #years
+  facet_wrap(~winter_yr)
+
+#fewer samples in iceon, higher variance, when get year/year
