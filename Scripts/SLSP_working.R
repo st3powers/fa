@@ -127,6 +127,24 @@ ggplot(secchi_small, aes(season, secnview)) +
 icesnow_orig<-read.csv("Data/ntl34_v5.csv", stringsAsFactors = FALSE)
 icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,totice,whiteice,blueice)
 
+#=============================================================================
+# ----> read in light
+
+light_orig<-read.csv("Data/ntl29_v5.csv", stringsAsFactors = FALSE)
+light<-light_orig %>% select(lakeid,year=year4,sampledate,sta,depth,light)
+
+# play with depth groups?
+light$depthgroup<-light$depth
+light$depthgroup[which(light$depth <=2)]<-"0-2"
+light$depthgroup[which(light$depth >2 & light$depth<=5)]<-"2-5"
+light$depthgroup[which(light$depth >5 & light$depth<=10)]<-"5-10"
+light$depthgroup[which(light$depth >10 & light$depth<=15)]<-"10-15"
+light$depthgroup[which(light$depth >15 & light$depth<=20)]<-"15-20"
+light$depthgroup[which(light$depth >20)]<-"20-99"
+light$depthgroup[which(light$depth =="0-1")]<-"0-2"
+light$depthgroup[which(light$depth =="0-8")]<-"0-8"
+
+light<-light %>% select(-depth)
 
 #=============================================================================
 # ----> read in chl
@@ -137,27 +155,26 @@ chlr_north<-chl_north_orig %>% select(lakeid,year=year4,sampledate,depth,chl=chl
 chlr_south<-chl_south_orig %>% select(lakeid,year=year4,sampledate,depth=depth_range_m,chl=tri_chl_spec,phaeo=phaeo_spec)
 chlr<-rbind(chlr_north,chlr_south)
 
-
 #=============================================================================
-# combine chl and snow/ice datasets
+# combine chl, snow/ice, and light datasets
 
-merge<-merge(icesnow,chlr, by=c("lakeid","sampledate")) #keep only dates that are in both
-data<-merge
+merge<-merge(icesnow,chlr, by=c("lakeid","sampledate","year")) #keep only dates that are in both
+snowicechl<-merge
 
 #make date a date
-data$sampledate <- as.Date(data$sampledate, format = "%m/%d/%Y")
+snowicechl$sampledate <- as.Date(snowicechl$sampledate, format = "%m/%d/%Y")
 
-data$depthgroup<-data$depth
+snowicechl$depthgroup<-snowicechl$depth
 
 # play with depth groups?
-data$depthgroup[which(data$depth <=2)]<-"0-2"
-data$depthgroup[which(data$depth >2 & data$depth<=5)]<-"2-5"
-data$depthgroup[which(data$depth >5 & data$depth<=10)]<-"5-10"
-data$depthgroup[which(data$depth >10 & data$depth<=15)]<-"10-15"
-data$depthgroup[which(data$depth >15 & data$depth<=20)]<-"15-20"
-data$depthgroup[which(data$depth >20)]<-"20-99"
-data$depthgroup[which(data$depth =="0-1")]<-"0-2"
-data$depthgroup[which(data$depth =="0-8")]<-"0-8"
+snowicechl$depthgroup[which(snowicechl$depth <=2)]<-"0-2"
+snowicechl$depthgroup[which(snowicechl$depth >2 & snowicechl$depth<=5)]<-"2-5"
+snowicechl$depthgroup[which(snowicechl$depth >5 & snowicechl$depth<=10)]<-"5-10"
+snowicechl$depthgroup[which(snowicechl$depth >10 & snowicechl$depth<=15)]<-"10-15"
+snowicechl$depthgroup[which(snowicechl$depth >15 & snowicechl$depth<=20)]<-"15-20"
+snowicechl$depthgroup[which(snowicechl$depth >20)]<-"20-99"
+snowicechl$depthgroup[which(snowicechl$depth =="0-1")]<-"0-2"
+snowicechl$depthgroup[which(snowicechl$depth =="0-8")]<-"0-8"
 
 merge.test<-merge(icesnow,chlr, by=c("lakeid","sampledate"),all=TRUE)
 
@@ -170,28 +187,72 @@ janfeb.missingsnowice<-janfeb[which((is.na(janfeb$avsnow)+is.na(janfeb$totice))=
 100*length(janfeb.missingsnowice[,1])/length(merge[,1])
 # 0.6084396,  so ice or snow data measured for 99.4% of jan/feb chl samples
 
-data.aggdepths<-data %>% group_by(lakeid,sampledate,avsnow,sdsnow,totice,whiteice,blueice) %>%
-  dplyr::summarize(chl=mean(chl,na.rm=TRUE)) %>% as.data.frame()
+merge<-merge(snowicechl,light,by=c("lakeid","sampledate","depthgroup","sta","year"))
+merge2<-subset(merge,merge$avsnow>=0|merge$totice>=0)
+merge3<-merge2[-which(duplicated(merge2)==TRUE),]
+snowicechllight<-merge3
+#snowicechl<-snowicechllight
 
-data.aggdepthgroups<-data %>% group_by(lakeid,depthgroup,sampledate,avsnow,sdsnow,totice,whiteice,blueice) %>%
-  dplyr::summarize(chl=mean(chl,na.rm=TRUE)) %>% as.data.frame()
+snowicechllight.aggdepths<-snowicechllight %>% group_by(lakeid,sampledate,avsnow,sdsnow,totice,whiteice,blueice) %>%
+  dplyr::summarize(chl=mean(chl,na.rm=TRUE),
+                   light=mean(light,na.rm=TRUE)) %>% as.data.frame()
+
+snowicechllight.aggdepthgroups<-snowicechllight %>% group_by(lakeid,depthgroup,sampledate,avsnow,sdsnow,totice,whiteice,blueice) %>%
+  dplyr::summarize(chl=mean(chl,na.rm=TRUE),
+                   light=mean(light,na.rm=TRUE)) %>% as.data.frame()
 
 
 # plot chl~snow, all depths
-dataplot<-data
+dataplot<-snowicechllight
 ggplot(dataplot,aes(x=avsnow,y=chl,color=sdsnow)) +
   geom_point()+
   facet_wrap(~lakeid,scales = "free")
 
 # plot chl~snow, depth groups
-dataplot<-data.aggdepthgroups
+dataplot<-snowicechllight.aggdepthgroups
 ggplot(dataplot,aes(x=avsnow,y=chl,color=sdsnow, shape=depthgroup)) +
   geom_point()+
   facet_wrap(~lakeid,scales = "free")
 
 # plat chl~snow, aggregate depths
-dataplot<-data.aggdepths
+dataplot<-snowicechllight.aggdepths
 ggplot(dataplot,aes(x=avsnow,y=chl,color=sdsnow)) +
   geom_point()+
   facet_wrap(~lakeid,scales = "free")
 
+# plot chl~light, all depths
+dataplot<-snowicechllight
+ggplot(dataplot,aes(x=light,y=chl,color=sdsnow)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
+
+# plot chl~light, depth groups
+dataplot<-snowicechllight.aggdepthgroups
+ggplot(dataplot,aes(x=light,y=chl,color=sdsnow, shape=depthgroup)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
+
+# plat chl~light, aggregate depths
+dataplot<-snowicechllight.aggdepths
+ggplot(dataplot,aes(x=light,y=chl,color=sdsnow)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
+
+
+# plot chl~light, all depths
+dataplot<-snowicechllight
+ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
+
+# plot chl~light, depth groups
+dataplot<-snowicechllight.aggdepthgroups
+ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow, shape=depthgroup)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
+
+# plat chl~light, aggregate depths
+dataplot<-snowicechllight.aggdepths
+ggplot(dataplot,aes(x=avsnow,y=light,color=sdsnow)) +
+  geom_point()+
+  facet_wrap(~lakeid,scales = "free")
