@@ -99,6 +99,7 @@ lter_dates_only <- lter_lakes %>%
   rename(sample_year = year) %>% 
   arrange(lakeid, sample_year)
 
+#make seasons wide format to can have column "start", "sample", and "end" dates
 seasons_lakes_wide <- seasons_lakes %>% 
   melt(id.vars = c("lakeid", "year", "season"), variable.name = "category", value.name = "date") %>% 
   mutate(seasons_category = paste(season, category, sep = "_")) %>% 
@@ -112,7 +113,7 @@ seasons_lakes_wide <- seasons_lakes %>%
 
 lter_seasons_pre <- merge(lter_dates_only, seasons_lakes_wide,
                       by = c("lakeid"), all.x = TRUE) %>% 
-  #tag seasons
+  #tag seasons with iceon/iceoff (NA if not fall within start/end dates)
   mutate(season = ifelse(date >= iceon_startdate & date <= iceon_enddate, "iceon", NA),
          season = ifelse(date >= iceoff_startdate & date <= iceoff_enddate, "iceoff", season)) %>% 
   #keep only samples that fall within iceon or iceoff
@@ -153,6 +154,7 @@ lter_month <- lter_seasons %>%
 #identify contributors (genus-level) <5% of any sample any date (within lake)
 #use wet weight (shouldn't matter)
 
+#find contributions to biomass, in terms of %
 lter_contribs <- lter_month %>% 
   #for each lake/year/month, find total biomass
   group_by(lakeid, winter_yr, month) %>% 
@@ -167,7 +169,7 @@ lter_contribs <- lter_month %>%
   mutate(perc_genus_bm = genus_bm / total_bm * 100) %>% 
   ungroup()  
 
-#find genera that are over 5% of a sample BY LAKE
+#find genera that are ever over 5% of a sample BY LAKE
 lter_high_contrib <- lter_contribs %>% 
   filter(perc_genus_bm >= 0.05)
 
@@ -177,7 +179,7 @@ lter_high_contrib_genera <- lter_high_contrib %>%
   arrange(lakeid, genus) %>% 
   mutate(high_p = "present")
 
-#find genera that are NOT over 5% of a sample
+#find genera that are NOT ever over 5% of a sample
 lter_low_contrib <- lter_contribs %>% 
   filter(perc_genus_bm < 0.05) 
 
@@ -188,6 +190,7 @@ lter_low_contrib_genera <- lter_low_contrib %>%
   mutate(low_p = "present")
 
 #merge, keep ones that are present in low and not in high
+#(i.e., those that are never >=5% of a sample)
 lter_remove_5 <- merge(lter_high_contrib_genera, lter_low_contrib_genera,
                        by = c("lakeid", "genus"), all = TRUE) %>% 
   #these are ones that are never >=5% of a lake sample
