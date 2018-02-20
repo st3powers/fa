@@ -141,8 +141,12 @@ chlr<-rbind(chlr_north,chlr_south)
 #=============================================================================
 # combine chl and snow/ice datasets
 
-merge<-merge(icesnow,chlr, by=c("lakeid","sampledate"))
+merge<-merge(icesnow,chlr, by=c("lakeid","sampledate")) #keep only dates that are in both
 data<-merge
+
+#make date a date
+data$sampledate <- as.Date(data$sampledate, format = "%m/%d/%Y")
+
 data$depthgroup<-data$depth
 
 # play with depth groups?
@@ -156,6 +160,9 @@ data$depthgroup[which(data$depth =="0-1")]<-"0-2"
 data$depthgroup[which(data$depth =="0-8")]<-"0-8"
 
 merge.test<-merge(icesnow,chlr, by=c("lakeid","sampledate"),all=TRUE)
+
+#fix dates
+merge.test$sampledate <- as.Date(merge.test$sampledate, format = "%m/%d/%Y")
 
 # check to see how many jan/feb chla values lack snow/ice data
 janfeb<-subset(merge.test,month(merge.test$sampledate) %in% c(1,2))
