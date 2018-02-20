@@ -547,10 +547,14 @@ dat_yr_long <- full_dat_weighted_yr_season_FA %>%
 head(dat_yr_long)
 
 #plot it up
-ggplot(dat_yr_long, aes(season, FA_avg_perc)) +
+ggplot(data=dat_yr_long, aes(x=season, y=FA_avg_perc)) +
+  #boxplot
   geom_boxplot() +
+  #points, not overlapping, colored by lake
   geom_jitter(width = 0.1, aes(color = lakeid)) +
+  #split by FA type
   facet_wrap(~FA_type)
+
 #MUFA shows no diff, but PUFA/SAFA do:
 #PUFA higher in winter, SAFA higher in summer
   
@@ -569,10 +573,14 @@ safa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_yr_long, FA_type == "SAFA_pe
 summary(safa1) #p<<0.001 (SAFA signif higher in winter)
 
 #what if split lakes?
-ggplot(dat_yr_long, aes(season, FA_avg_perc)) +
+ggplot(data=dat_yr_long, aes(x=season, y=FA_avg_perc)) +
+  #boxplot
   geom_boxplot() +
+  #points, not overlapping, colored by lake
   geom_jitter(width = 0.1, aes(color = lakeid)) +
+  #combos of laketype and FA type
   facet_grid(lakeid~FA_type)
+
 #same trends - MUFA no diff, PUFA higher in winter, SAFA higher in summer
 
 # ----> check out months within seasons
@@ -586,13 +594,19 @@ dat_month_long <- full_dat_weighted_month_season_FA %>%
 head(dat_month_long)
 
 #plot FA by category and month, between seasons, colored by lake
-ggplot(dat_month_long, aes(month, FA_avg_perc, group = month)) +
+ggplot(data=dat_month_long, aes(x=month, y=FA_avg_perc, group = month)) +
+  #boxplot
   geom_boxplot() +
+  #points, colored by lake
   geom_point(aes(color = lakeid)) +
+  #combos of season/FA type
   facet_grid(season ~ FA_type)
 
 #together, colored by season not lake
-ggplot(dat_month_long, aes(month, FA_avg_perc, group = month)) +
+ggplot(data=dat_month_long, aes(x=month, y=FA_avg_perc, group = month)) +
+  #boxplot
   geom_boxplot() +
+  #points, colored by season
   geom_point(aes(color = season)) +
+  #split FAs to different plots
   facet_wrap(~FA_type)
