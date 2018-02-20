@@ -130,7 +130,7 @@ icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,
 #=============================================================================
 # ----> read in light
 
-light_orig<-read.csv("Data/ntl29_v5.csv", stringsAsFactors = FALSE)
+light_orig<-read.csv("../Data/ntl29_v5.csv", stringsAsFactors = FALSE)
 light<-light_orig %>% select(lakeid,year=year4,sampledate,sta,depth,light)
 
 # play with depth groups?
