@@ -167,14 +167,14 @@ snowicechl$sampledate <- as.Date(snowicechl$sampledate, format = "%m/%d/%Y")
 snowicechl$depthgroup<-snowicechl$depth
 
 # play with depth groups?
-snowicechl$depthgroup[which(snowicechl$depth <=2)]<-"0-2"
-snowicechl$depthgroup[which(snowicechl$depth >2 & snowicechl$depth<=5)]<-"2-5"
-snowicechl$depthgroup[which(snowicechl$depth >5 & snowicechl$depth<=10)]<-"5-10"
-snowicechl$depthgroup[which(snowicechl$depth >10 & snowicechl$depth<=15)]<-"10-15"
-snowicechl$depthgroup[which(snowicechl$depth >15 & snowicechl$depth<=20)]<-"15-20"
-snowicechl$depthgroup[which(snowicechl$depth >20)]<-"20-99"
-snowicechl$depthgroup[which(snowicechl$depth =="0-1")]<-"0-2"
-snowicechl$depthgroup[which(snowicechl$depth =="0-8")]<-"0-8"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) <=2)]<-"0-2"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) >2 & as.numeric(snowicechl$depth)<=5)]<-"2-5"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) >5 & as.numeric(snowicechl$depth)<=10)]<-"5-10"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) >10 & as.numeric(snowicechl$depth)<=15)]<-"10-15"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) >15 & as.numeric(snowicechl$depth)<=20)]<-"15-20"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) >20)]<-"20-99"
+#snowicechl$depthgroup[which(snowicechl$depth =="0-1")]<-"0-2"
+#snowicechl$depthgroup[which(snowicechl$depth =="0-8")]<-"0-8"
 
 merge.test<-merge(icesnow,chlr, by=c("lakeid","sampledate"),all=TRUE)
 
