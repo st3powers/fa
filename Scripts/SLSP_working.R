@@ -125,6 +125,16 @@ ggplot(secchi_small, aes(season, secnview)) +
 # ----> read in snow/ice
 
 icesnow_orig<-read.csv("../Data/ntl34_v5.csv", stringsAsFactors = FALSE)
+
+#can we get minimum snow for dates with multiple samples?
+icesnow_orig %>% 
+  group_by(lakeid, sampledate) %>% 
+  summarize(n = length(avsnow)) %>% 
+  filter(n > 1)
+
+
+
+#keep only columns of interest
 icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,totice,whiteice,blueice)
 
 #=============================================================================
