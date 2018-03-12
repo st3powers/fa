@@ -24,7 +24,8 @@
 # 9) aggregate biomass to genus level
 # 10) tag LTER data with whether has matching division/Group or genus in FA data
 # 11) merge LTER with FA data (genus, division, NA matches)
-# 12) weight FA data by biomass dry weight / total biomass (genus-level FA, independent of biomass)
+# 12) weight FA data by biomass dry weight / total biomass 
+#     (genus-level FA, independent of biomass)
 # 13) aggregated weighted to community level 
 
 
@@ -594,7 +595,7 @@ summary(pufa1) #p<<0.001 (PUFA signif higher in winter)
 
 #SAFA
 safa1 <- aov(FA_avg_perc ~ season, dat = filter(dat_yr_long, FA_type == "SAFA_perc_avg"))
-summary(safa1) #p<<0.001 (SAFA signif higher in winter)
+summary(safa1) #p<<0.001 (SAFA signif higher in summer)
 
 #what if split lakes?
 ggplot(data=dat_yr_long, aes(x=season, y=FA_avg_perc)) +
