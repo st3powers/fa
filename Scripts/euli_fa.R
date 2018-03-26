@@ -100,7 +100,7 @@ str(unique(euli_phytos_complete_matching$lakename))
 #16 lakes
 
 #temporal coverage
-euli_phytos_complete_matching %>% 
+lake_years <- euli_phytos_complete_matching %>% 
   group_by(lakename) %>% 
   summarize(yrs = n_distinct(year)) %>% 
   arrange(yrs) %>% 
@@ -122,6 +122,8 @@ euli_phytos_complete_matching %>%
 # 14      Scharmuetzelsee   9
 # 15          Lake Monona  18
 # 16         Lake Mendota  19
+
+lake_years_3more <- filter(lake_years, yrs >= 3)
 
 #make long to be equivalent to FA data
 phytos_long <- euli_phytos_complete_matching %>% 
@@ -219,11 +221,23 @@ full_dat_weighted <- full_dat %>%
   #prop phyto (already biomass/total biomass) * prop FA
   mutate(sumSAFA_prop = grp_avg_sumSAFA * prop,
          sumMUFA_prop = grp_avg_sumMUFA * prop, 
-         sumPUFA_prop = grp_avg_sumPUFA * prop) %>% 
+         sumPUFA_prop = grp_avg_sumPUFA * prop,
+         prop_c18.2w6 = grp_avg_c18.2w6 * prop,
+         prop_c18.3w6 = grp_avg_c18.3w6 * prop,
+         prop_c18.3w3 = grp_avg_c18.3w3 * prop,
+         prop_c18.4w3 = grp_avg_c18.4w3 * prop,
+         prop_c18.5w3 = grp_avg_c18.5w3 * prop,
+         prop_c20.4w6 = grp_avg_c20.4w6 * prop,
+         prop_c20.5w3 = grp_avg_c20.5w3 * prop,
+         prop_c22.6w3 = grp_avg_c22.6w3 * prop) %>% 
   #keep only columns of interest
   #for now, only SAFA, MUFA, PUFA
   select(lakename, year, season, phyto_group, 
-         sumSAFA_prop, sumMUFA_prop, sumPUFA_prop)
+         sumSAFA_prop, sumMUFA_prop, sumPUFA_prop,
+         prop_c18.2w6,prop_c18.3w6,  prop_c18.3w3,
+         prop_c18.4w3, prop_c18.5w3,
+         prop_c20.4w6, prop_c20.5w3, 
+         prop_c22.6w3)
 
 #sum within lake/time point (get community-level FA)
 full_dat_weighted_comm <- full_dat_weighted %>% 
@@ -231,7 +245,15 @@ full_dat_weighted_comm <- full_dat_weighted %>%
   #sum across phyto groups
   summarize(MUFA_perc = sum(sumMUFA_prop, na.rm = TRUE),
             PUFA_perc = sum(sumPUFA_prop, na.rm = TRUE),
-            SAFA_perc = sum(sumSAFA_prop, na.rm = TRUE)) %>% 
+            SAFA_perc = sum(sumSAFA_prop, na.rm = TRUE),
+            perc_c18.2w6 = sum(prop_c18.2w6, na.rm = TRUE),
+            perc_c18.3w6 = sum(prop_c18.3w6, na.rm = TRUE),
+            perc_c18.3w3 = sum(prop_c18.3w3, na.rm = TRUE),
+            perc_c18.4w3 = sum(prop_c18.4w3, na.rm = TRUE),
+            perc_c18.5w3 = sum(prop_c18.5w3, na.rm = TRUE),
+            perc_c20.4w6 = sum(prop_c20.4w6, na.rm = TRUE),
+            perc_c20.5w3 = sum(prop_c20.5w3, na.rm = TRUE),
+            perc_c22.6w3 = sum(prop_c22.6w3, na.rm = TRUE)) %>% 
   as.data.frame()
 
 #this format matches LTER_FA_20180217 
@@ -250,7 +272,25 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
             seasonal_avg__PUFA_perc = mean(PUFA_perc, na.rm = TRUE),
             sd__PUFA_perc = sd(PUFA_perc, na.rm = TRUE),
             seasonal_avg__SAFA_perc = mean(SAFA_perc, na.rm = TRUE),
-            sd__SAFA_perc = sd(SAFA_perc, na.rm = TRUE)) %>% 
+            sd__SAFA_perc = sd(SAFA_perc, na.rm = TRUE),
+            
+            seasonal_avg__c18.2w6 = sum(perc_c18.2w6, na.rm = TRUE),
+            seasonal_avg__c18.3w6 = sum(perc_c18.3w6, na.rm = TRUE),
+            seasonal_avg__c18.3w3 = sum(perc_c18.3w3, na.rm = TRUE),
+            seasonal_avg__c18.4w3 = sum(perc_c18.4w3, na.rm = TRUE),
+            seasonal_avg__c18.5w3 = sum(perc_c18.5w3, na.rm = TRUE),
+            seasonal_avg__c20.4w6 = sum(perc_c20.4w6, na.rm = TRUE),
+            seasonal_avg__c20.5w3 = sum(perc_c20.5w3, na.rm = TRUE),
+            seasonal_avg__c22.6w3 = sum(perc_c22.6w3, na.rm = TRUE),
+            
+            sd__c18.2w6 = sd(perc_c18.2w6, na.rm = TRUE),
+            sd__c18.3w6 = sd(perc_c18.3w6, na.rm = TRUE),
+            sd__c18.3w3 = sd(perc_c18.3w3, na.rm = TRUE),
+            sd__c18.4w3 = sd(perc_c18.4w3, na.rm = TRUE),
+            sd__c18.5w3 = sd(perc_c18.5w3, na.rm = TRUE),
+            sd__c20.4w6 = sd(perc_c20.4w6, na.rm = TRUE),
+            sd__c20.5w3 = sd(perc_c20.5w3, na.rm = TRUE),
+            sd__c22.6w3 = sd(perc_c22.6w3, na.rm = TRUE)) %>% 
   as.data.frame()
 
 #===========================================================================
@@ -264,7 +304,7 @@ dat_long_full_points <- full_dat_weighted_comm %>%
 #matching graphs to ME/MO
 ggplot(dat_long_full_points, aes(season, FA_perc)) +
   geom_boxplot() +
-  geom_point(aes(color = lakename)) +
+  #geom_jitter(aes(color = lakename), width = 0.1, size = 1) +
   facet_wrap(~FA_type)
 
 #hmmm definitely not as extreme as ME/MO
@@ -273,7 +313,7 @@ ggplot(dat_long_full_points, aes(season, FA_perc)) +
 ggplot(filter(dat_long_full_points, lakename %in% c("Lake Mendota", "Lake Monona")), 
        aes(season, FA_perc)) +
   geom_boxplot() +
-  geom_jitter(aes(color = lakename)) +
+  geom_jitter(aes(color = lakename), width = 0.1) +
   facet_wrap(~FA_type)
 
 #yep, see the same trends in just ME/MO
@@ -326,13 +366,14 @@ ggplot(dat_long_seasonal_points, aes(season, seasonal_avg)) +
 ggplot(dat_long_seasonal_points, aes(season, seasonal_avg)) +
   #ignore outlier sofr boxplots only
   geom_boxplot(outlier.shape = NA) +
-  geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
+  geom_point(aes(group = lakename), position = position_dodge(width = 0.2), size = 0.5) +
   geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
-                    color = lakename, group = lakename),
+                    #color = lakename, 
+                    group = lakename),
                 position = position_dodge(width = 0.2)) +
   # geom_pointrange(aes(x = season, y = seasonal_avg, 
   #                     ymin = seasonal_avg - sd, ymax = seasonal_avg + sd)) +
-  facet_wrap(~FA_type) +
+  facet_wrap(~FA_type, scales = "free") +
   ggtitle("all lakes")
 
 # ----> ignore mendota/monona
@@ -361,4 +402,26 @@ safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_ty
 summary(safa2) #p=0.289
 
 
+# ----> lakes with >3 years matching
+ggplot(filter(dat_long_seasonal_points, lakename %in% lake_years_3more$lakename & !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+       aes(season, seasonal_avg)) +
+  #ignore outlier sofr boxplots only
+  #geom_boxplot(outlier.shape = NA) +
+  geom_boxplot() + 
+  geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
+  geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
+                    color = lakename, group = lakename),
+                position = position_dodge(width = 0.2)) +
+  facet_grid(lakename~FA_type)
 
+filter(dat_long_seasonal_points, lakename == "Saanajarvi")
+filter(full_dat, lakename == "Saanajarvi")
+#double check saanajarvi
+
+# ----> just the <3 years lakes
+ggplot(filter(dat_long_seasonal_points, !(lakename %in% lake_years_3more$lakename) & !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+       aes(season, seasonal_avg)) +
+  geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
+  facet_grid(lakename~FA_type)
+
+#hard to see anything - need to split up facets
