@@ -20,7 +20,7 @@ fa_orig <- read.csv("../Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE
 
 euli <- euli_orig %>% 
   #keep only columns of potential interest
-  select(year, season, researcher, lakename, lakeregloc, lakecountry,
+  select(year, season, researcher, lakename, stationname, poolstation, lakeregloc, lakecountry,
          startday, startmonth, startyear, endday, endmonth, endyear,
          iceduration, fadata, avesecchidepth, avechla, 
          phytomethod, avephytomass, avephytocount,
@@ -29,19 +29,48 @@ euli <- euli_orig %>%
   filter(!(is.na(propchloro) & is.na(propcrypto) & is.na(propcyano) & 
            is.na(propdiatom) & is.na(propdiatom) & is.na(propotherphyto)))
 
-euli_phytos <- euli %>% 
-  #start by looking just at pytos, can circle back to incorporate snow/ice/secchi etc.
-  select(year, season, lakename, 
-         propchloro, propcrypto, propcyano, propdiatom, propdiatom, propotherphyto)
+#some lakes have multiple stations within lake
+euli %>% 
+  group_by(lakename) %>% 
+  summarize(n = n_distinct(stationname)) %>% 
+  filter(n > 1) %>% 
+  as.data.frame()
+#               lakename n
+# 1 Blackstrap Reservoir 2
+# 2     Lake Diefenbaker 3
 
-summary(euli_phytos) #40 NA in crypto
-str(euli_phytos) #211
+euli %>% 
+  group_by(lakename) %>% 
+  summarize(n = n_distinct(poolstation)) %>% 
+  as.data.frame() %>% 
+  filter(n > 1)
+
+#1:1 match lakename:poolstation
+# filter(euli, lakename %in% c("Blackstrap Reservoir", "Lake Diefenbaker")) %>% select(lakename, stationname, poolstation)
+
+#aggregate to lake/poolstation
+euli_lakes_phytos <- euli %>% 
+  #start by looking just at pytos, can circle back to incorporate snow/ice/secchi etc.
+  select(year, season, lakename, poolstation, 
+         propchloro, propcrypto, propcyano, propdiatom, propotherphyto) %>% 
+  #group and aggregate
+  group_by(lakename, poolstation, year, season) %>% 
+  summarize(prop_chloro = mean(propchloro, na.rm = TRUE),
+            prop_crypto = mean(propcrypto, na.rm = TRUE),
+            prop_cyano = mean(propcyano, na.rm = TRUE),
+            prop_diatom = mean(propdiatom, na.rm = TRUE),
+            prop_other = mean(propotherphyto, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  as.data.frame()
+  
+summary(euli_lakes_phytos) #40 NA in crypto
+str(euli_lakes_phytos) #205
 
 #going to start by using only lakes with *NO NAs* for phytos
-euli_phytos_complete <- euli_phytos %>% 
-  filter(!(is.na(propchloro) | is.na(propcrypto) | is.na(propcyano) | 
-             is.na(propdiatom) | is.na(propdiatom) | is.na(propotherphyto)))
-#164 obvs - only "complete" phyto profiles
+euli_phytos_complete <- euli_lakes_phytos %>% 
+  filter(!(is.na(prop_chloro) | is.na(prop_crypto) | is.na(prop_cyano) | 
+             is.na(prop_diatom) | is.na(prop_other)))
+#158 obvs - only "complete" phyto profiles
 
 #24 lakes in total
 unique(euli_phytos_complete$lakename) 
@@ -96,11 +125,12 @@ euli_phytos_complete_matching %>%
 
 #make long to be equivalent to FA data
 phytos_long <- euli_phytos_complete_matching %>% 
+  select(-poolstation) %>% 
   melt(id.vars = c("lakename", "year", "season")) %>% 
   rename(phyto_group = variable, prop = value)
 
 #remove prop from group name
-phytos_long$phyto_group <- gsub("prop", "", phytos_long$phyto_group)
+phytos_long$phyto_group <- gsub("prop_", "", phytos_long$phyto_group)
 
 unique(phytos_long$phyto_group)
 # "chloro"     "crypto"     "cyano"      "diatom"     "otherphyto"
@@ -252,20 +282,22 @@ ggplot(filter(dat_long_full_points, lakename %in% c("Lake Mendota", "Lake Monona
 
 #have some definite outliers in full dat
 ggplot(dat_long_full_points, aes(season, FA_perc)) +
-  geom_boxplot() +
+  geom_boxplot(outlier.shape = NA) +
   geom_jitter(width = 0.1,aes(color = season), alpha = 0.4) +
   facet_wrap(~FA_type)
 
 #what do anovas say?
 
 mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc"))
-summary(mufa1) #p=0.463
+summary(mufa1) #p=0.946
 
 pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc"))
-summary(pufa1) #p=0.377
+summary(pufa1) #p=0.439
 
 safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc"))
-summary(safa1) #p=0.0102
+summary(safa1) #p=0.00136
+
+#SAFA - signif higher in summer
 
 #===========================================================================
 # ----> look at lakes aggregated to seasons across years
@@ -290,7 +322,7 @@ ggplot(dat_long_seasonal_points, aes(season, seasonal_avg)) +
   #                     ymin = seasonal_avg - sd, ymax = seasonal_avg + sd)) +
   facet_wrap(~FA_type)
   
-#plot
+# ----> all lakes
 ggplot(dat_long_seasonal_points, aes(season, seasonal_avg)) +
   #ignore outlier sofr boxplots only
   geom_boxplot(outlier.shape = NA) +
@@ -300,13 +332,33 @@ ggplot(dat_long_seasonal_points, aes(season, seasonal_avg)) +
                 position = position_dodge(width = 0.2)) +
   # geom_pointrange(aes(x = season, y = seasonal_avg, 
   #                     ymin = seasonal_avg - sd, ymax = seasonal_avg + sd)) +
-  facet_wrap(~FA_type)
+  facet_wrap(~FA_type) +
+  ggtitle("all lakes")
 
+# ----> ignore mendota/monona
+ggplot(filter(dat_long_seasonal_points, !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+              aes(season, seasonal_avg)) +
+  #ignore outlier sofr boxplots only
+  #geom_boxplot(outlier.shape = NA) +
+  geom_boxplot() + 
+  geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
+  geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
+                    color = lakename, group = lakename),
+                position = position_dodge(width = 0.2)) +
+  facet_wrap(~FA_type) +
+  ggtitle("excluding Madison lakes")
 
+mufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
+                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
+summary(mufa2) #p=0.693
 
+pufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc" &
+                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
+summary(pufa2) #p=0.621
 
-
-
+safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc" &
+                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
+summary(safa2) #p=0.289
 
 
 
