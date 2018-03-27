@@ -10,6 +10,7 @@ library(ggplot2)
 
 #===========================================================================
 # ----> read in ecology under lake ice dataset and FA dataset
+#===========================================================================
 
 euli_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
@@ -17,6 +18,7 @@ fa_orig <- read.csv("../Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE
 
 #===========================================================================
 # ----> wrangle ice phyto data
+#===========================================================================
 
 euli <- euli_orig %>% 
   #keep only columns of potential interest
@@ -156,6 +158,7 @@ unique(phytos_long$phyto_group)
 
 #===========================================================================
 # ----> wrangle FA data
+#===========================================================================
 
 fa <- fa_orig %>% 
   #only fresh water
@@ -195,6 +198,7 @@ fa_equiv <- fa %>%
 
 #===========================================================================
 # ----> aggregate FA data
+#===========================================================================
 
 #aggregate to level of fa_group (average)
 
@@ -217,6 +221,7 @@ fa_group_avgs
 
 #===========================================================================
 # ----> combine EULI and FA datasets
+#===========================================================================
 
 head(phytos_long) #lake, year, season, group, prop
 head(fa_group_avgs) #group, FAs
@@ -311,35 +316,44 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
   as.data.frame()
 
 #===========================================================================
-# ----> look at all lakes/years/seasons
+# ----> look at ALL lakes/years/seasons
+#===========================================================================
 
 #make long for plotting
 dat_long_full_points <- full_dat_weighted_comm %>% 
   melt(id.vars = c("lakename", "year", "season")) %>% 
   rename(FA_type = variable, FA_perc = value)
 
-#matching graphs to ME/MO - all  lakes
+# ----> plot for all lakes
 ggplot(filter(dat_long_full_points, FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
               aes(season, FA_perc)) +
   geom_boxplot() +
   #geom_jitter(aes(color = lakename), width = 0.1, size = 1) +
   facet_wrap(~FA_type)
 
-#hmmm definitely not as extreme as ME/MO
+#what do anovas say for all lakes?
+mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc"))
+summary(mufa1) #p=0.417
 
-#check just using those for sanity check
+pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc"))
+summary(pufa1) #p=0.962
+
+safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc"))
+summary(safa1) #p=0.0255 *
+#SAFA signif higher in summer
+
+
+# ----> check just ME/MO 
 ggplot(filter(dat_long_full_points, lakename %in% c("Lake Mendota", "Lake Monona") &
                 FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")), 
        aes(season, FA_perc)) +
   geom_boxplot() +
   geom_jitter(aes(color = lakename), width = 0.1) +
   facet_wrap(~FA_type)
+#SAFA more extreme
 
-#yep, see the same trends in just ME/MO
-#so it's accurate
-#(other has wider spread since it's actual data, not avg proportions)
 
-#removing ME/MO
+# ----> removing ME/MO
 ggplot(filter(dat_long_full_points, !(lakename %in% c("Lake Mendota", "Lake Monona")) &
                 FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")), 
        aes(season, FA_perc)) +
@@ -348,36 +362,24 @@ ggplot(filter(dat_long_full_points, !(lakename %in% c("Lake Mendota", "Lake Mono
   facet_wrap(~FA_type)
 #pretty wide spread
 
-
-#what do anovas say for all lakes?
+#what do anovas say when remove ME/MO?
 mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa1) #p=0.584
+summary(mufa1) #p=0.324
 
 pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa1) #p=0.746
+summary(pufa1) #p=0.962
 
 safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa1) #p=0.0438 *
-
-#SAFA - signif (barely) higher in summer
-
-#anovas when remove ME/MO
-#what do anovas say for all lakes?
-mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc"))
-summary(mufa1) #p=0.946
-
-pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc"))
-summary(pufa1) #p=0.439
-
-safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc"))
-summary(safa1) #p=0.00136
+summary(safa1) #p=0.0859
+#none signif
 
 
 #===========================================================================
 # ----> look at lakes aggregated to seasons across years
+#===========================================================================
 
 #make long
 dat_long_seasonal_points <- full_dat_weighted_comm_agg %>% 
@@ -388,7 +390,7 @@ dat_long_seasonal_points <- full_dat_weighted_comm_agg %>%
   #make wide so have column for avg and sd
   dcast(lakename + season + n_years + FA_type ~ agg_type, value.var = "value")
   
-# ----> all lakes
+# ----> plot for all lakes
 ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
               aes(season, seasonal_avg)) +
   #ignore outlier sofr boxplots only
@@ -403,23 +405,23 @@ ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc",
   facet_wrap(~FA_type) +
   ggtitle("all lakes")
 
+#anova for all lakes, aggregate to one point per lake/season across years
 mufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
-summary(mufa2) #p=0.685
+summary(mufa2) #p=0.949
 
 pufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc"))
-summary(pufa2) #p=0.615
+summary(pufa2) #p=0.709
 
 safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc"))
-summary(safa2) #p=0.327
+summary(safa2) #p=0.374
+#none signif
 
 # ----> ignore mendota/monona
 ggplot(filter(dat_long_seasonal_points, 
               FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc") &
                 !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
               aes(season, seasonal_avg)) +
-  #ignore outlier sofr boxplots only
-  #geom_boxplot(outlier.shape = NA) +
-  geom_boxplot() + 
+  geom_boxplot(outlier.shape = NA) +
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
   geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
                     color = lakename, group = lakename),
@@ -429,15 +431,16 @@ ggplot(filter(dat_long_seasonal_points,
 
 mufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa2) #p=0.693
+summary(mufa2) #p=0.959
 
 pufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa2) #p=0.621
+summary(pufa2) #p=0.716
 
 safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa2) #p=0.289
+summary(safa2) #p=0.346
+#none signif
 
 
 # ----> lakes with >3 years matching
@@ -456,9 +459,9 @@ ggplot(filter(dat_long_seasonal_points,
 # ----> just the <3 years lakes
 ggplot(filter(dat_long_seasonal_points, 
               FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc") &
-                !(lakename %in% lake_years_3more$lakename) & !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+                !(lakename %in% lake_years_3more$lakename) & 
+                !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
        aes(season, seasonal_avg)) +
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
   facet_grid(lakename~FA_type, scales = "free")
 
-#hard to see anything - need to split up facets
