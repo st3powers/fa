@@ -541,21 +541,29 @@ dat_seasonal_C_ratios <- dat_seasonal_C %>%
          #divide by PUFAs prop to get ratio with SAFA
          #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
          longchainPUFA_SAFA = (total_long_chain * seasonal_avg__PUFA_perc) / seasonal_avg__SAFA_perc)
+
   
-#plot to visualize - omega6:omega3
+# ----> omega6:omega3 of PUFAs
 ggplot(dat_seasonal_C_ratios, aes(season, omega6_omega3_ratio)) +
   geom_boxplot() +
   geom_point(aes(color = lakename))
 
+mod1 <- aov(omega6_omega3_ratio ~ season, dat = dat_seasonal_C_ratios)
+summary(mod1) #p=0.487
+
 ggplot(dat_seasonal_C_ratios, aes(total_omega6, total_omega3)) +
   geom_point(aes(color = lakename)) +
-  geom_smooth() +
+  #geom_smooth() +
   facet_wrap(~season)
+
   
-#plot to visualize - long chain PUFA:SAFA
+# ----> long chain PUFA:SAFA
 ggplot(dat_seasonal_C_ratios, aes(season, longchainPUFA_SAFA)) +
   geom_boxplot() +
-  geom_point(aes(color = lakename))  
+  geom_point(aes(color = lakename)) 
+
+mod2 <- aov(longchainPUFA_SAFA ~ season, dat = dat_seasonal_C_ratios)
+summary(mod2) #p=0.7
   
 ggplot(dat_seasonal_C_ratios, 
        aes((total_long_chain/seasonal_avg__PUFA_perc), seasonal_avg__SAFA_perc)) +
@@ -563,8 +571,9 @@ ggplot(dat_seasonal_C_ratios,
   geom_smooth(method = "lm") +
   facet_wrap(~season)  
   
-mod1 <- lm(seasonal_avg__SAFA_perc ~ longchainPUFA_SAFA,
+linmod1 <- lm(seasonal_avg__SAFA_perc ~ longchainPUFA_SAFA,
    dat = dat_seasonal_C_ratios)  
-summary(mod1)
+summary(linmod1)
 #nope
+
   
