@@ -475,7 +475,6 @@ ggplot(filter(dat_long_seasonal_points,
 head(full_dat_weighted_comm_agg)
 summary(dat_long_seasonal_points)
 
-
 #per AG: look at ratio of omega 6 to omega 3 PUFAs
 #per MM: look at long chain C PUFAs:SAFA ratio
 #(AG defines long chain as 20+ C, so here 20 and 22 Cs)
@@ -485,15 +484,15 @@ summary(dat_long_seasonal_points)
 
 
 # tag PUFAs as short or long chain, omega 3 or omega 6
-dat_long_seasonal_C <- dat_long_seasonal_points %>% 
-  #if c20 or c22, identify as long chain - default is NA
-  #if c18, short chain
-  mutate(c_chain = ifelse(grepl("c20*", FA_type)==TRUE | grepl("c22*", FA_type)==TRUE, 
-                             "long", NA),
-         c_chain = ifelse(grepl("c18*", FA_type)==TRUE, "short", c_chain)) %>% 
-  #identify whether omega 3 or omega 6
-  mutate(omega_num = ifelse(grepl("*w3", FA_type)==TRUE, "omega_three", NA),
-         omega_num = ifelse(grepl("*w6", FA_type)==TRUE, "omega_six", omega_num))
+# dat_long_seasonal_C <- dat_long_seasonal_points %>% 
+#   #if c20 or c22, identify as long chain - default is NA
+#   #if c18, short chain
+#   mutate(c_chain = ifelse(grepl("c20*", FA_type)==TRUE | grepl("c22*", FA_type)==TRUE, 
+#                              "long", NA),
+#          c_chain = ifelse(grepl("c18*", FA_type)==TRUE, "short", c_chain)) %>% 
+#   #identify whether omega 3 or omega 6
+#   mutate(omega_num = ifelse(grepl("*w3", FA_type)==TRUE, "omega_three", NA),
+#          omega_num = ifelse(grepl("*w6", FA_type)==TRUE, "omega_six", omega_num))
 
 # dat_long_seasonal_C %>% select(FA_type, c_chain) %>% unique() %>% arrange(c_chain)
 # dat_long_seasonal_C %>% select(FA_type, omega_num) %>% unique() %>% arrange(omega_num)
@@ -502,16 +501,70 @@ dat_long_seasonal_C <- dat_long_seasonal_points %>%
 #so can sum up percentage of C omega types within PUFA
 #(should double check that sum c omegas !> sum PUFA)
 
-dat_long_seasonal_C <- dat_long_seasonal_C %>% 
-  group_by(lakename, season, omega_num) %>% 
-  mutate(total_omega = sum(seasonal_avg, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  group_by(lakename, season, c_chain) %>% 
-  mutate(total_chain = sum(seasonal_avg, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  as.data.frame()
+# dat_long_seasonal_C <- dat_long_seasonal_C %>% 
+#   group_by(lakename, season, omega_num) %>% 
+#   mutate(total_omega = sum(seasonal_avg, na.rm = TRUE)) %>% 
+#   ungroup() %>% 
+#   group_by(lakename, season, c_chain) %>% 
+#   mutate(total_chain = sum(seasonal_avg, na.rm = TRUE)) %>% 
+#   ungroup() %>% 
+#   as.data.frame()
 
-summary(dat_long_seasonal_C)
-#total omega and total chain never go over 100%, good
-#these are % of PUFA (which is itself a percent, so a percent of a percent)
 
+#find omega and long/short chain totals
+dat_seasonal_C <- full_dat_weighted_comm_agg %>% 
+  #total omega 3 prop of PUFAs
+  mutate(total_omega3 = seasonal_avg__c18.3w3 + 
+                        seasonal_avg__c18.4w3 + 
+                        seasonal_avg__c18.5w3 + 
+                        seasonal_avg__c20.5w3 + 
+                        seasonal_avg__c22.6w3,
+         #total omega 6 prop of PUFAs
+         total_omega6 = seasonal_avg__c18.2w6 + 
+                        seasonal_avg__c18.3w6 + 
+                        seasonal_avg__c20.4w6,
+         #total short chain PUFAs (<20 C)
+         total_short_chain = seasonal_avg__c18.2w6 +
+                       seasonal_avg__c18.3w6 +
+                       seasonal_avg__c18.3w3 +
+                       seasonal_avg__c18.4w3 +
+                       seasonal_avg__c18.5w3,
+         #total long chain PUFAs (AG defined as >= 20 C)
+         total_long_chain = seasonal_avg__c20.4w6 +
+                       seasonal_avg__c20.5w3 +
+                       seasonal_avg__c22.6w3)
+
+#find omega6:omega3 for PUFAs and long chain PUFAs:SAFA
+dat_seasonal_C_ratios <- dat_seasonal_C %>% 
+  mutate(omega6_omega3_ratio = total_omega6/total_omega3,
+         #total long chain is % of PUFAs that are long chain
+         #divide by PUFAs prop to get ratio with SAFA
+         #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
+         longchainPUFA_SAFA = (total_long_chain * seasonal_avg__PUFA_perc) / seasonal_avg__SAFA_perc)
+  
+#plot to visualize - omega6:omega3
+ggplot(dat_seasonal_C_ratios, aes(season, omega6_omega3_ratio)) +
+  geom_boxplot() +
+  geom_point(aes(color = lakename))
+
+ggplot(dat_seasonal_C_ratios, aes(total_omega6, total_omega3)) +
+  geom_point(aes(color = lakename)) +
+  geom_smooth() +
+  facet_wrap(~season)
+  
+#plot to visualize - long chain PUFA:SAFA
+ggplot(dat_seasonal_C_ratios, aes(season, longchainPUFA_SAFA)) +
+  geom_boxplot() +
+  geom_point(aes(color = lakename))  
+  
+ggplot(dat_seasonal_C_ratios, 
+       aes((total_long_chain/seasonal_avg__PUFA_perc), seasonal_avg__SAFA_perc)) +
+  geom_point(aes(color = lakename)) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~season)  
+  
+mod1 <- lm(seasonal_avg__SAFA_perc ~ longchainPUFA_SAFA,
+   dat = dat_seasonal_C_ratios)  
+summary(mod1)
+#nope
+  
