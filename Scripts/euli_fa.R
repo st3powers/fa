@@ -143,7 +143,7 @@ lake_years_3more <- filter(lake_years, yrs >= 3)
 
 #make long to be equivalent to FA data
 phytos_long <- euli_phytos_complete_matching %>% 
-  select(-poolstation) %>% 
+  select(-poolstation, -lakeyear) %>% 
   melt(id.vars = c("lakename", "year", "season")) %>% 
   rename(phyto_group = variable, prop = value)
 
