@@ -296,14 +296,14 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
             seasonal_avg__SAFA_perc = mean(SAFA_perc, na.rm = TRUE),
             sd__SAFA_perc = sd(SAFA_perc, na.rm = TRUE),
             
-            seasonal_avg__c18.2w6 = sum(perc_c18.2w6, na.rm = TRUE),
-            seasonal_avg__c18.3w6 = sum(perc_c18.3w6, na.rm = TRUE),
-            seasonal_avg__c18.3w3 = sum(perc_c18.3w3, na.rm = TRUE),
-            seasonal_avg__c18.4w3 = sum(perc_c18.4w3, na.rm = TRUE),
-            seasonal_avg__c18.5w3 = sum(perc_c18.5w3, na.rm = TRUE),
-            seasonal_avg__c20.4w6 = sum(perc_c20.4w6, na.rm = TRUE),
-            seasonal_avg__c20.5w3 = sum(perc_c20.5w3, na.rm = TRUE),
-            seasonal_avg__c22.6w3 = sum(perc_c22.6w3, na.rm = TRUE),
+            seasonal_avg__c18.2w6 = mean(perc_c18.2w6, na.rm = TRUE),
+            seasonal_avg__c18.3w6 = mean(perc_c18.3w6, na.rm = TRUE),
+            seasonal_avg__c18.3w3 = mean(perc_c18.3w3, na.rm = TRUE),
+            seasonal_avg__c18.4w3 = mean(perc_c18.4w3, na.rm = TRUE),
+            seasonal_avg__c18.5w3 = mean(perc_c18.5w3, na.rm = TRUE),
+            seasonal_avg__c20.4w6 = mean(perc_c20.4w6, na.rm = TRUE),
+            seasonal_avg__c20.5w3 = mean(perc_c20.5w3, na.rm = TRUE),
+            seasonal_avg__c22.6w3 = mean(perc_c22.6w3, na.rm = TRUE),
             
             sd__c18.2w6 = sd(perc_c18.2w6, na.rm = TRUE),
             sd__c18.3w6 = sd(perc_c18.3w6, na.rm = TRUE),
@@ -316,7 +316,7 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
   as.data.frame()
 
 #===========================================================================
-# ----> look at ALL lakes/years/seasons
+# ----> look at ALL lakes/years/seasons (MUFA/PUFA/SAFA)
 #===========================================================================
 
 #make long for plotting
@@ -378,7 +378,7 @@ summary(safa2) #p=0.0859
 
 
 #===========================================================================
-# ----> look at lakes aggregated to seasons across years
+# ----> look at lakes aggregated to seasons across years (MUFA/PUFA/SAFA)
 #===========================================================================
 
 #make long
@@ -467,3 +467,51 @@ ggplot(filter(dat_long_seasonal_points,
   facet_grid(lakename~FA_type, scales = "free")
 
 #not seeing consistent trends
+
+#===========================================================================
+# ----> lakes aggregated to seasons across years (C omegas)
+#===========================================================================
+
+head(full_dat_weighted_comm_agg)
+summary(dat_long_seasonal_points)
+
+
+#per AG: look at ratio of omega 6 to omega 3 PUFAs
+#per MM: look at long chain C PUFAs:SAFA ratio
+#(AG defines long chain as 20+ C, so here 20 and 22 Cs)
+
+#unique(dat_long_seasonal_points$FA_type)
+# "c18.2w6"   "c18.3w3"   "c18.3w6"   "c18.4w3"   "c18.5w3"   "c20.4w6"   "c20.5w3"   "c22.6w3" 
+
+
+# tag PUFAs as short or long chain, omega 3 or omega 6
+dat_long_seasonal_C <- dat_long_seasonal_points %>% 
+  #if c20 or c22, identify as long chain - default is NA
+  #if c18, short chain
+  mutate(c_chain = ifelse(grepl("c20*", FA_type)==TRUE | grepl("c22*", FA_type)==TRUE, 
+                             "long", NA),
+         c_chain = ifelse(grepl("c18*", FA_type)==TRUE, "short", c_chain)) %>% 
+  #identify whether omega 3 or omega 6
+  mutate(omega_num = ifelse(grepl("*w3", FA_type)==TRUE, "omega_three", NA),
+         omega_num = ifelse(grepl("*w6", FA_type)==TRUE, "omega_six", omega_num))
+
+# dat_long_seasonal_C %>% select(FA_type, c_chain) %>% unique() %>% arrange(c_chain)
+# dat_long_seasonal_C %>% select(FA_type, omega_num) %>% unique() %>% arrange(omega_num)
+
+#recall: everything in seasonal_avg is a percentage
+#so can sum up percentage of C omega types within PUFA
+#(should double check that sum c omegas !> sum PUFA)
+
+dat_long_seasonal_C <- dat_long_seasonal_C %>% 
+  group_by(lakename, season, omega_num) %>% 
+  mutate(total_omega = sum(seasonal_avg, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  group_by(lakename, season, c_chain) %>% 
+  mutate(total_chain = sum(seasonal_avg, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  as.data.frame()
+
+summary(dat_long_seasonal_C)
+#total omega and total chain never go over 100%, good
+#these are % of PUFA (which is itself a percent, so a percent of a percent)
+
