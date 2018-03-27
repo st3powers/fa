@@ -403,7 +403,7 @@ ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc",
   # geom_pointrange(aes(x = season, y = seasonal_avg, 
   #                     ymin = seasonal_avg - sd, ymax = seasonal_avg + sd)) +
   facet_wrap(~FA_type) +
-  ggtitle("all lakes")
+  ggtitle("all lakes (aggregated to lake/season)")
 
 #anova for all lakes, aggregate to one point per lake/season across years
 mufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
@@ -427,7 +427,7 @@ ggplot(filter(dat_long_seasonal_points,
                     color = lakename, group = lakename),
                 position = position_dodge(width = 0.2)) +
   facet_wrap(~FA_type) +
-  ggtitle("excluding Madison lakes")
+  ggtitle("excluding Madison lakes (aggregated to lake/season)")
 
 mufa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
@@ -446,25 +446,25 @@ summary(safa4) #p=0.346
 # ----> lakes with >3 years matching
 ggplot(filter(dat_long_seasonal_points, 
               FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc") &
-              lakename %in% lake_years_3more$lakename & 
-                !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+              lakename %in% lake_years_3more$lakename), 
        aes(season, seasonal_avg)) +
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
   geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
                     color = lakename, group = lakename),
                 position = position_dodge(width = 0.2)) +
-  facet_grid(lakename~FA_type)
+  facet_grid(lakename~FA_type) +
+  ggtitle("Lakes withat least 3 years")
 #not seeing really consistent trends
 
 
 # ----> just the <3 years lakes
 ggplot(filter(dat_long_seasonal_points, 
               FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc") &
-                !(lakename %in% lake_years_3more$lakename) & 
-                !(lakename %in% c("Lake Mendota", "Lake Monona"))), 
+                !(lakename %in% lake_years_3more$lakename)), 
        aes(season, seasonal_avg)) +
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
-  facet_grid(lakename~FA_type, scales = "free")
+  facet_grid(lakename~FA_type, scales = "free") +
+  ggtitle("Lakes with <3 years data")
 
 #not seeing consistent trends
 
@@ -546,7 +546,8 @@ dat_seasonal_C_ratios <- dat_seasonal_C %>%
 # ----> omega6:omega3 of PUFAs
 ggplot(dat_seasonal_C_ratios, aes(season, omega6_omega3_ratio)) +
   geom_boxplot() +
-  geom_point(aes(color = lakename))
+  geom_jitter(aes(color = lakename), width = 0.1) +
+  ggtitle("All lakes, omega6:omega3 ratio for PUFAs")
 
 mod1 <- aov(omega6_omega3_ratio ~ season, dat = dat_seasonal_C_ratios)
 summary(mod1) #p=0.487
@@ -554,22 +555,25 @@ summary(mod1) #p=0.487
 ggplot(dat_seasonal_C_ratios, aes(total_omega6, total_omega3)) +
   geom_point(aes(color = lakename)) +
   #geom_smooth() +
-  facet_wrap(~season)
+  facet_wrap(~season) +
+  ggtitle("omega6 vs omega3 for all lakes")
 
   
 # ----> long chain PUFA:SAFA
 ggplot(dat_seasonal_C_ratios, aes(season, longchainPUFA_SAFA)) +
   geom_boxplot() +
-  geom_point(aes(color = lakename)) 
+  geom_jitter(aes(color = lakename), width = 0.1) +
+  ggtitle("All lakes, long chain (>=20 C) PUFA : SAFA")
 
 mod2 <- aov(longchainPUFA_SAFA ~ season, dat = dat_seasonal_C_ratios)
 summary(mod2) #p=0.7
   
 ggplot(dat_seasonal_C_ratios, 
-       aes((total_long_chain/seasonal_avg__PUFA_perc), seasonal_avg__SAFA_perc)) +
+       aes(longchainPUFA_SAFA, seasonal_avg__SAFA_perc)) +
   geom_point(aes(color = lakename)) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~season)  
+  #geom_smooth(method = "lm") +
+  facet_wrap(~season) +
+  ggtitle("long chain (>=20 C) PUFA vs SAFA")
   
 linmod1 <- lm(seasonal_avg__SAFA_perc ~ longchainPUFA_SAFA,
    dat = dat_seasonal_C_ratios)  
