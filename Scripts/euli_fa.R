@@ -363,17 +363,17 @@ ggplot(filter(dat_long_full_points, !(lakename %in% c("Lake Mendota", "Lake Mono
 #pretty wide spread
 
 #what do anovas say when remove ME/MO?
-mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc" &
+mufa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa1) #p=0.324
+summary(mufa2) #p=0.324
 
-pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc" &
+pufa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa1) #p=0.962
+summary(pufa2) #p=0.962
 
-safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc" &
+safa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa1) #p=0.0859
+summary(safa2) #p=0.0859
 #none signif
 
 
@@ -406,14 +406,14 @@ ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc",
   ggtitle("all lakes")
 
 #anova for all lakes, aggregate to one point per lake/season across years
-mufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
-summary(mufa2) #p=0.949
+mufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
+summary(mufa3) #p=0.949
 
-pufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc"))
-summary(pufa2) #p=0.709
+pufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc"))
+summary(pufa3) #p=0.709
 
-safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc"))
-summary(safa2) #p=0.374
+safa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc"))
+summary(safa3) #p=0.374
 #none signif
 
 # ----> ignore mendota/monona
@@ -429,17 +429,17 @@ ggplot(filter(dat_long_seasonal_points,
   facet_wrap(~FA_type) +
   ggtitle("excluding Madison lakes")
 
-mufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
+mufa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa2) #p=0.959
+summary(mufa4) #p=0.959
 
-pufa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc" &
+pufa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa2) #p=0.716
+summary(pufa4) #p=0.716
 
-safa2 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc" &
+safa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa2) #p=0.346
+summary(safa4) #p=0.346
 #none signif
 
 
@@ -454,6 +454,7 @@ ggplot(filter(dat_long_seasonal_points,
                     color = lakename, group = lakename),
                 position = position_dodge(width = 0.2)) +
   facet_grid(lakename~FA_type)
+#not seeing really consistent trends
 
 
 # ----> just the <3 years lakes
@@ -465,3 +466,4 @@ ggplot(filter(dat_long_seasonal_points,
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
   facet_grid(lakename~FA_type, scales = "free")
 
+#not seeing consistent trends
