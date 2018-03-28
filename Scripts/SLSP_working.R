@@ -120,6 +120,44 @@ ggplot(secchi_small, aes(season, secnview)) +
 #most data points for secnview
 #or take average of secview, secnview
 
+#=============================================================================
+# ----> secchi vs FA props
+
+madison_fa <- read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv", stringsAsFactors = FALSE)
+
+head(secchi_small)
+head(madison_fa)
+
+#aggregate secchi to year/season
+#get max secnview and average
+secchi_agg <- secchi_small %>% 
+  group_by(lakeid, winter_yr, season) %>% 
+  summarize(max_secnview = max(secnview, na.rm = TRUE),
+            mean_secnview = mean(secnview, na.rm = TRUE)) %>% 
+  as.data.frame()
+
+#merge lake/year/season secchi and FA dataframes
+fa_secchi <- merge(secchi_agg, madison_fa, 
+                   #keep only rows in both
+                   by = c("lakeid", "winter_yr", "season"), all = FALSE)
+
+#recreate SH plot
+ggplot(fa_secchi, aes(max_secnview, (MUFA_perc_avg + PUFA_perc_avg))) +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season)
+
+ggplot(fa_secchi, aes(max_secnview, SAFA_perc_avg)) +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season)
+
+ggplot(fa_secchi, aes(mean_secnview, (MUFA_perc_avg + PUFA_perc_avg))) +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season)
+
+ggplot(fa_secchi, aes(mean_secnview, SAFA_perc_avg)) +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season)
+
 
 #=============================================================================
 # ----> read in snow/ice
