@@ -558,6 +558,9 @@ summary(full_dat_weighted_yr_season_FA)
 #PUFA: 24-61
 #SAFA: 22-47
 
+#write to csv
+write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
+
 # ============================================================== #
 ## ========= END OF DATA WRANGLING - ANALYSIS BEGINS ========== ##
 # ============================================================== #
