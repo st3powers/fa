@@ -537,10 +537,12 @@ dat_seasonal_C <- full_dat_weighted_comm_agg %>%
 #find omega6:omega3 for PUFAs and long chain PUFAs:SAFA
 dat_seasonal_C_ratios <- dat_seasonal_C %>% 
   mutate(omega6_omega3_ratio = total_omega6/total_omega3,
+         #may want just long chain PUFA down the road (%)
+         longchainPUFA = (total_long_chain * seasonal_avg__PUFA_perc)/100,
          #total long chain is % of PUFAs that are long chain
          #divide by PUFAs prop to get ratio with SAFA
          #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
-         longchainPUFA_SAFA = (total_long_chain * seasonal_avg__PUFA_perc) / seasonal_avg__SAFA_perc)
+         longchainPUFA_SAFA = longchainPUFA/ seasonal_avg__SAFA_perc)
 
   
 # ----> omega6:omega3 of PUFAs
@@ -569,15 +571,65 @@ mod2 <- aov(longchainPUFA_SAFA ~ season, dat = dat_seasonal_C_ratios)
 summary(mod2) #p=0.7
   
 ggplot(dat_seasonal_C_ratios, 
-       aes(longchainPUFA_SAFA, seasonal_avg__SAFA_perc)) +
+       aes(longchainPUFA, seasonal_avg__SAFA_perc)) +
   geom_point(aes(color = lakename)) +
   #geom_smooth(method = "lm") +
   facet_wrap(~season) +
   ggtitle("long chain (>=20 C) PUFA vs SAFA")
-  
-linmod1 <- lm(seasonal_avg__SAFA_perc ~ longchainPUFA_SAFA,
-   dat = dat_seasonal_C_ratios)  
-summary(linmod1)
-#nope
 
-  
+
+#===========================================================================
+# ----> C omegas log transformed
+#=========================================================================== 
+
+# ----> log(omega6:omega3) of PUFAs
+ggplot(dat_seasonal_C_ratios, aes(season, log(omega6_omega3_ratio))) +
+  geom_boxplot() +
+  geom_jitter(aes(color = lakename), width = 0.1) +
+  ggtitle("All lakes, log(omega6:omega3) ratio for PUFAs")
+
+mod1 <- aov(log(omega6_omega3_ratio) ~ season, dat = dat_seasonal_C_ratios)
+summary(mod1) #p=0.706
+#not seeing seasonal difference in logged omega ratio
+
+ggplot(dat_seasonal_C_ratios, aes(log(total_omega6), log(total_omega3))) +
+  geom_point(aes(color = lakename)) +
+  facet_wrap(~season) +
+  ggtitle("logged omega6 vs omega3 for all lakes")
+#when log omegas, do see positive linear trend
+#which means...?
+
+linmod2 <- lm(log(total_omega3) ~ log(total_omega6), dat = dat_seasonal_C_ratios)
+summary(linmod2) #0.0164 * 
+#signif positive linear trend - increase in (log) omega6, increase in (log) omega3
+
+#ratio of logged
+ggplot(dat_seasonal_C_ratios, aes(season, (log(total_omega6)/log(total_omega3)))) +
+  geom_boxplot() +
+  geom_jitter(aes(color = lakename), width = 0.1) +
+  ggtitle("All lakes, ratio of logged omegas for PUFAs")
+
+mod1 <- aov((log(total_omega6)/log(total_omega3)) ~ season, dat = dat_seasonal_C_ratios)
+summary(mod1) #p=0.829
+#ratio of logged more challenging to interpret, but non-signif
+
+
+# ----> long chain PUFA:SAFA
+ggplot(dat_seasonal_C_ratios, aes(season, log(longchainPUFA_SAFA))) +
+  geom_boxplot() +
+  geom_jitter(aes(color = lakename), width = 0.1) +
+  ggtitle("All lakes, log(long chain (>=20 C) PUFA : SAFA)")
+
+mod3 <- aov(log(longchainPUFA_SAFA) ~ season, dat = dat_seasonal_C_ratios)
+summary(mod3) #p=0.894
+
+ggplot(dat_seasonal_C_ratios, 
+       aes(log(longchainPUFA), log(seasonal_avg__SAFA_perc))) +
+  geom_point(aes(color = lakename)) +
+  #geom_smooth(method = "lm") +
+  facet_wrap(~season) +
+  ggtitle("logged long chain (>=20 C) PUFA vs SAFA")
+
+linmod3 <- lm(log(seasonal_avg__SAFA_perc) ~ log(longchainPUFA), dat = dat_seasonal_C_ratios)
+summary(linmod3) #0.821
+
