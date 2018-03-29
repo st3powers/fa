@@ -153,7 +153,7 @@ phytos_long <- euli_phytos_complete_matching %>%
 phytos_long$phyto_group <- gsub("prop_", "", phytos_long$phyto_group)
 
 unique(phytos_long$phyto_group)
-# "chloro"     "crypto"     "cyano"      "diatom"     "otherphyto"
+# "chloro"     "crypto"     "cyano"      "diatom"     "other"
 
 
 #===========================================================================
@@ -194,6 +194,14 @@ fa_equiv <- fa %>%
 # fa_equiv %>% 
 #   select(Group, Class, fa_group) %>% 
 #   unique()
+#
+# fa_equiv %>% group_by(fa_group) %>% summarize(n = n_distinct(Genus)) %>% as.data.frame()
+#   fa_group  n
+# 1   chloro 13
+# 2   crypto  2
+# 3    cyano 22
+# 4   diatom  8
+# 5    other 11
 
 
 #===========================================================================
