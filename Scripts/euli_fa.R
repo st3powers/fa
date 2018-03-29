@@ -185,7 +185,7 @@ fa_equiv <- fa %>%
          fa_group = ifelse(Class %in% c("Bacillariophyceae", "Fragilariophyceae", "Coscinodiscophyceae"),
                            "diatom", fa_group),
          #other phyto = average of all else in FA data
-         fa_group = ifelse(is.na(fa_group), "otherphyto", fa_group))
+         fa_group = ifelse(is.na(fa_group), "other", fa_group))
 
 # fa_equiv %>% 
 #   select(Group, fa_group) %>% 
@@ -260,6 +260,30 @@ full_dat_weighted <- full_dat %>%
          prop_c18.4w3, prop_c18.5w3,
          prop_c20.4w6, prop_c20.5w3, 
          prop_c22.6w3)
+#==============================================================================================
+# ----> investigating possible errors with MUFA+PUFA+SAFA == 1
+#have some cases where all categories increasing between seasons
+#have some cases where sum of FAs does not equal ~100%
+
+filter(full_dat, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group)
+filter(full_dat_weighted, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group)
+
+filter(full_dat_weighted, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group) %>% 
+  group_by(season) %>% 
+  summarize(totSAFA = sum(sumSAFA_prop, na.rm = TRUE),
+            totMUFA = sum(sumMUFA_prop, na.rm = TRUE),
+            totPUFA = sum(sumPUFA_prop, na.rm = TRUE),
+            total = totSAFA + totMUFA + totPUFA)
+
+#"other" phyto category in euli doesn't have matching equivalent in fa
+#means MUFA+PUFA+SAFA for phyto community <1
+filter(full_dat, phyto_group == "other") %>% select(prop) %>% arrange(prop)
+filter(full_dat, phyto_group == "other" & prop > 0.5) %>% arrange(lakename, season)
+
+#back up, find total proportion excluding "other" then re-find proportions for remaining
+
+#==============================================================================================
+
 
 #sum within lake/time point (get community-level FA)
 full_dat_weighted_comm <- full_dat_weighted %>% 
