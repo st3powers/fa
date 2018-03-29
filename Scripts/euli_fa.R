@@ -268,27 +268,22 @@ full_dat_weighted <- full_dat %>%
          prop_c18.4w3, prop_c18.5w3,
          prop_c20.4w6, prop_c20.5w3, 
          prop_c22.6w3)
+
 #==============================================================================================
-# ----> investigating possible errors with MUFA+PUFA+SAFA == 1
-#have some cases where all categories increasing between seasons
-#have some cases where sum of FAs does not equal ~100%
 
-filter(full_dat, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group)
-filter(full_dat_weighted, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group)
-
-filter(full_dat_weighted, lakename == "Lake Santo Parmense") %>% arrange(year, season, phyto_group) %>% 
-  group_by(season) %>% 
+full_dat_weighted %>% 
+  group_by(lakename, year, season) %>% 
   summarize(totSAFA = sum(sumSAFA_prop, na.rm = TRUE),
             totMUFA = sum(sumMUFA_prop, na.rm = TRUE),
             totPUFA = sum(sumPUFA_prop, na.rm = TRUE),
-            total = totSAFA + totMUFA + totPUFA)
+            total = totSAFA + totMUFA + totPUFA) %>% 
+  as.data.frame() %>% 
+  filter(total < 90) %>% 
+  arrange(desc(total))
 
-#"other" phyto category in euli doesn't have matching equivalent in fa
-#means MUFA+PUFA+SAFA for phyto community <1
-filter(full_dat, phyto_group == "other") %>% select(prop) %>% arrange(prop)
-filter(full_dat, phyto_group == "other" & prop > 0.5) %>% arrange(lakename, season)
-
-#back up, find total proportion excluding "other" then re-find proportions for remaining
+#pretty low totals...
+#because high "other" category which means FA for other is kind of arbitrary?
+#perhaps better to find total of non-other, recalculate %, then move forward
 
 #==============================================================================================
 
