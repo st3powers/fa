@@ -286,13 +286,13 @@ full_dat_weighted <- full_dat %>%
          prop_c20.4w6, prop_c20.5w3, 
          prop_c22.6w3)
 
-# full_dat_weighted %>% 
-#   group_by(lakename, year, season) %>% 
+# full_dat_weighted %>%
+#   group_by(lakename, year, season) %>%
 #   summarize(totSAFA = sum(sumSAFA_prop, na.rm = TRUE),
 #             totMUFA = sum(sumMUFA_prop, na.rm = TRUE),
 #             totPUFA = sum(sumPUFA_prop, na.rm = TRUE),
-#             total = totSAFA + totMUFA + totPUFA) %>% 
-#   as.data.frame() %>% 
+#             total = totSAFA + totMUFA + totPUFA) %>%
+#   as.data.frame() %>%
 #   summary()
 
 
@@ -312,6 +312,11 @@ full_dat_weighted_comm <- full_dat_weighted %>%
             perc_c20.5w3 = sum(prop_c20.5w3, na.rm = TRUE),
             perc_c22.6w3 = sum(prop_c22.6w3, na.rm = TRUE)) %>% 
   as.data.frame()
+
+# full_dat_weighted_comm %>% 
+#   mutate(total_FA = MUFA_perc + PUFA_perc + SAFA_perc) %>% 
+#   summary()
+#like above, ranges from ~97 to 99, good
 
 #this format matches LTER_FA_20180217 
 #(detailed look at lakes ME/MO)
@@ -350,84 +355,9 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
             sd__c22.6w3 = sd(perc_c22.6w3, na.rm = TRUE)) %>% 
   as.data.frame()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#===========================================================================
-# ----> look at ALL lakes/years/seasons (MUFA/PUFA/SAFA)
-#===========================================================================
-
-#make long for plotting
-dat_long_full_points <- full_dat_weighted_comm %>% 
-  melt(id.vars = c("lakename", "year", "season")) %>% 
-  rename(FA_type = variable, FA_perc = value)
-
-# ----> plot for all lakes
-ggplot(filter(dat_long_full_points, FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
-              aes(season, FA_perc)) +
-  geom_boxplot() +
-  #geom_jitter(aes(color = lakename), width = 0.1, size = 1) +
-  facet_wrap(~FA_type)
-
-#what do anovas say for all lakes?
-mufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc"))
-summary(mufa1) #p=0.417
-
-pufa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc"))
-summary(pufa1) #p=0.962
-
-safa1 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc"))
-summary(safa1) #p=0.0255 *
-#SAFA signif higher in summer
-
-
-# ----> check just ME/MO 
-ggplot(filter(dat_long_full_points, lakename %in% c("Lake Mendota", "Lake Monona") &
-                FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")), 
-       aes(season, FA_perc)) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakename), width = 0.1) +
-  facet_wrap(~FA_type)
-#SAFA more extreme
-
-
-# ----> removing ME/MO
-ggplot(filter(dat_long_full_points, !(lakename %in% c("Lake Mendota", "Lake Monona")) &
-                FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")), 
-       aes(season, FA_perc)) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakename), width = 0.1) +
-  facet_wrap(~FA_type)
-#pretty wide spread
-
-#what do anovas say when remove ME/MO?
-mufa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "MUFA_perc" &
-                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa2) #p=0.324
-
-pufa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "PUFA_perc" &
-                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa2) #p=0.962
-
-safa2 <- aov(FA_perc ~ season, dat = filter(dat_long_full_points, FA_type == "SAFA_perc" &
-                                              !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa2) #p=0.0859
-#none signif
+# full_dat_weighted_comm_agg %>% 
+#   mutate(total_FA = seasonal_avg__MUFA_perc + seasonal_avg__PUFA_perc + seasonal_avg__SAFA_perc) %>% 
+#   summary()
 
 
 #===========================================================================
@@ -446,27 +376,24 @@ dat_long_seasonal_points <- full_dat_weighted_comm_agg %>%
 # ----> plot for all lakes
 ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
               aes(season, seasonal_avg)) +
-  #ignore outlier sofr boxplots only
   geom_boxplot(outlier.shape = NA) +
   geom_point(aes(group = lakename, color = lakename), position = position_dodge(width = 0.2), size = 0.5) +
   geom_errorbar(aes(x = season, ymin = seasonal_avg - sd, ymax = seasonal_avg + sd,
                     color = lakename, 
                     group = lakename),
                 position = position_dodge(width = 0.2)) +
-  # geom_pointrange(aes(x = season, y = seasonal_avg, 
-  #                     ymin = seasonal_avg - sd, ymax = seasonal_avg + sd)) +
   facet_wrap(~FA_type) +
   ggtitle("all lakes (aggregated to lake/season)")
 
 #anova for all lakes, aggregate to one point per lake/season across years
 mufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
-summary(mufa3) #p=0.949
+summary(mufa3) #p=0.769
 
 pufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc"))
-summary(pufa3) #p=0.709
+summary(pufa3) #p=0.377
 
 safa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc"))
-summary(safa3) #p=0.374
+summary(safa3) #p=0.486
 #none signif
 
 # ----> ignore mendota/monona
@@ -482,17 +409,18 @@ ggplot(filter(dat_long_seasonal_points,
   facet_wrap(~FA_type) +
   ggtitle("excluding Madison lakes (aggregated to lake/season)")
 
+#anovas
 mufa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc" & 
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(mufa4) #p=0.959
+summary(mufa4) #p=0.713
 
 pufa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "PUFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(pufa4) #p=0.716
+summary(pufa4) #p=0.377
 
 safa4 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "SAFA_perc" &
                                               !(lakename %in% c("Lake Mendota", "Lake Monona"))))
-summary(safa4) #p=0.346
+summary(safa4) #p=0.491
 #none signif
 
 
@@ -508,6 +436,8 @@ ggplot(filter(dat_long_seasonal_points,
   facet_grid(lakename~FA_type) +
   ggtitle("Lakes withat least 3 years")
 #not seeing really consistent trends
+#maaaaybe SAFA higher in winter, PUFA higher in summer
+#but not to level of significance
 
 
 # ----> just the <3 years lakes
@@ -518,8 +448,9 @@ ggplot(filter(dat_long_seasonal_points,
   geom_point(aes(color = lakename, group = lakename), position = position_dodge(width = 0.2)) +
   facet_grid(lakename~FA_type, scales = "free") +
   ggtitle("Lakes with <3 years data")
-
 #not seeing consistent trends
+#but removing "other" category fixed issue with all going up or down
+#between seasons (other category large % for some lakes)
 
 #===========================================================================
 # ----> lakes aggregated to seasons across years (C omegas)
@@ -534,34 +465,6 @@ summary(dat_long_seasonal_points)
 
 #unique(dat_long_seasonal_points$FA_type)
 # "c18.2w6"   "c18.3w3"   "c18.3w6"   "c18.4w3"   "c18.5w3"   "c20.4w6"   "c20.5w3"   "c22.6w3" 
-
-
-# tag PUFAs as short or long chain, omega 3 or omega 6
-# dat_long_seasonal_C <- dat_long_seasonal_points %>% 
-#   #if c20 or c22, identify as long chain - default is NA
-#   #if c18, short chain
-#   mutate(c_chain = ifelse(grepl("c20*", FA_type)==TRUE | grepl("c22*", FA_type)==TRUE, 
-#                              "long", NA),
-#          c_chain = ifelse(grepl("c18*", FA_type)==TRUE, "short", c_chain)) %>% 
-#   #identify whether omega 3 or omega 6
-#   mutate(omega_num = ifelse(grepl("*w3", FA_type)==TRUE, "omega_three", NA),
-#          omega_num = ifelse(grepl("*w6", FA_type)==TRUE, "omega_six", omega_num))
-
-# dat_long_seasonal_C %>% select(FA_type, c_chain) %>% unique() %>% arrange(c_chain)
-# dat_long_seasonal_C %>% select(FA_type, omega_num) %>% unique() %>% arrange(omega_num)
-
-#recall: everything in seasonal_avg is a percentage
-#so can sum up percentage of C omega types within PUFA
-#(should double check that sum c omegas !> sum PUFA)
-
-# dat_long_seasonal_C <- dat_long_seasonal_C %>% 
-#   group_by(lakename, season, omega_num) %>% 
-#   mutate(total_omega = sum(seasonal_avg, na.rm = TRUE)) %>% 
-#   ungroup() %>% 
-#   group_by(lakename, season, c_chain) %>% 
-#   mutate(total_chain = sum(seasonal_avg, na.rm = TRUE)) %>% 
-#   ungroup() %>% 
-#   as.data.frame()
 
 
 #find omega and long/short chain totals
@@ -597,7 +500,6 @@ dat_seasonal_C_ratios <- dat_seasonal_C %>%
          #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
          longchainPUFA_SAFA = longchainPUFA/ seasonal_avg__SAFA_perc)
 
-  
 # ----> omega6:omega3 of PUFAs
 ggplot(dat_seasonal_C_ratios, aes(season, omega6_omega3_ratio)) +
   geom_boxplot() +
@@ -605,13 +507,14 @@ ggplot(dat_seasonal_C_ratios, aes(season, omega6_omega3_ratio)) +
   ggtitle("All lakes, omega6:omega3 ratio for PUFAs")
 
 mod1 <- aov(omega6_omega3_ratio ~ season, dat = dat_seasonal_C_ratios)
-summary(mod1) #p=0.487
+summary(mod1) #p=0.47
 
 ggplot(dat_seasonal_C_ratios, aes(total_omega6, total_omega3)) +
   geom_point(aes(color = lakename)) +
   #geom_smooth() +
   facet_wrap(~season) +
   ggtitle("omega6 vs omega3 for all lakes")
+#no surprises here
 
   
 # ----> long chain PUFA:SAFA
@@ -621,7 +524,7 @@ ggplot(dat_seasonal_C_ratios, aes(season, longchainPUFA_SAFA)) +
   ggtitle("All lakes, long chain (>=20 C) PUFA : SAFA")
 
 mod2 <- aov(longchainPUFA_SAFA ~ season, dat = dat_seasonal_C_ratios)
-summary(mod2) #p=0.7
+summary(mod2) #p=0.98
   
 ggplot(dat_seasonal_C_ratios, 
        aes(longchainPUFA, seasonal_avg__SAFA_perc)) +
@@ -629,60 +532,3 @@ ggplot(dat_seasonal_C_ratios,
   #geom_smooth(method = "lm") +
   facet_wrap(~season) +
   ggtitle("long chain (>=20 C) PUFA vs SAFA")
-
-
-#===========================================================================
-# ----> C omegas log transformed
-#=========================================================================== 
-
-# ----> log(omega6:omega3) of PUFAs
-ggplot(dat_seasonal_C_ratios, aes(season, log(omega6_omega3_ratio))) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakename), width = 0.1) +
-  ggtitle("All lakes, log(omega6:omega3) ratio for PUFAs")
-
-mod1 <- aov(log(omega6_omega3_ratio) ~ season, dat = dat_seasonal_C_ratios)
-summary(mod1) #p=0.706
-#not seeing seasonal difference in logged omega ratio
-
-ggplot(dat_seasonal_C_ratios, aes(log(total_omega6), log(total_omega3))) +
-  geom_point(aes(color = lakename)) +
-  facet_wrap(~season) +
-  ggtitle("logged omega6 vs omega3 for all lakes")
-#when log omegas, do see positive linear trend
-#which means...?
-
-linmod2 <- lm(log(total_omega3) ~ log(total_omega6), dat = dat_seasonal_C_ratios)
-summary(linmod2) #0.0164 * 
-#signif positive linear trend - increase in (log) omega6, increase in (log) omega3
-
-#ratio of logged
-ggplot(dat_seasonal_C_ratios, aes(season, (log(total_omega6)/log(total_omega3)))) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakename), width = 0.1) +
-  ggtitle("All lakes, ratio of logged omegas for PUFAs")
-
-mod1 <- aov((log(total_omega6)/log(total_omega3)) ~ season, dat = dat_seasonal_C_ratios)
-summary(mod1) #p=0.829
-#ratio of logged more challenging to interpret, but non-signif
-
-
-# ----> long chain PUFA:SAFA
-ggplot(dat_seasonal_C_ratios, aes(season, log(longchainPUFA_SAFA))) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakename), width = 0.1) +
-  ggtitle("All lakes, log(long chain (>=20 C) PUFA : SAFA)")
-
-mod3 <- aov(log(longchainPUFA_SAFA) ~ season, dat = dat_seasonal_C_ratios)
-summary(mod3) #p=0.894
-
-ggplot(dat_seasonal_C_ratios, 
-       aes(log(longchainPUFA), log(seasonal_avg__SAFA_perc))) +
-  geom_point(aes(color = lakename)) +
-  #geom_smooth(method = "lm") +
-  facet_wrap(~season) +
-  ggtitle("logged long chain (>=20 C) PUFA vs SAFA")
-
-linmod3 <- lm(log(seasonal_avg__SAFA_perc) ~ log(longchainPUFA), dat = dat_seasonal_C_ratios)
-summary(linmod3) #0.821
-
