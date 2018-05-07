@@ -506,7 +506,7 @@ full_dat_weighted_small <- full_dat_weighted %>%
          c20.4w6_prop, c20.5w3_prop, c22.6w3_prop)
 
 #write to csv
-write.csv(full_dat_weighted_small, "LTER_madison_FA_weighted_groupdiv.csv", row.names = FALSE)
+write.csv(full_dat_weighted_small, "../Data/LTER_madison_FA_weighted_groupdiv.csv", row.names = FALSE)
 
 #this is basically saying:
 #for each time point, a genus has some proportion FAs

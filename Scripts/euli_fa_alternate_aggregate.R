@@ -2,6 +2,8 @@
 # uses Hampton et al. ecology under lake ice dataset (ecology letters)
 # and Galloway et al PLoS one paper fatty acid dataset
 
+# ----> removes "other" phyto and finds new proportions
+
 #libraries
 library(dplyr)
 library(reshape2)
