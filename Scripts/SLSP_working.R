@@ -123,6 +123,7 @@ ggplot(secchi_small, aes(season, secnview)) +
 #=============================================================================
 # ----> secchi vs FA props
 
+#written out from other script (LTER_FA.R script)
 madison_fa <- read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv", stringsAsFactors = FALSE)
 
 head(secchi_small)

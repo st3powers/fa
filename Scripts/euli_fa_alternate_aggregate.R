@@ -376,6 +376,7 @@ dat_long_seasonal_points <- full_dat_weighted_comm_agg %>%
   dcast(lakename + season + n_years + FA_type ~ agg_type, value.var = "value")
   
 # ----> plot for all lakes
+jpeg("../Figures/euli_lakes_seasonal.jpeg", width = 5, height = 4, units = "in", res = 300)
 ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
               aes(season, seasonal_avg)) +
   geom_boxplot(outlier.shape = NA) +
@@ -386,6 +387,7 @@ ggplot(filter(dat_long_seasonal_points, FA_type %in% c("MUFA_perc", "PUFA_perc",
                 position = position_dodge(width = 0.2)) +
   facet_wrap(~FA_type) +
   ggtitle("all lakes (aggregated to lake/season)")
+dev.off()
 
 #anova for all lakes, aggregate to one point per lake/season across years
 mufa3 <- aov(seasonal_avg ~ season, dat = filter(dat_long_seasonal_points, FA_type == "MUFA_perc"))
@@ -436,7 +438,7 @@ ggplot(filter(dat_long_seasonal_points,
                     color = lakename, group = lakename),
                 position = position_dodge(width = 0.2)) +
   facet_grid(lakename~FA_type) +
-  ggtitle("Lakes withat least 3 years")
+  ggtitle("Lakes with at least 3 years")
 #not seeing really consistent trends
 #maaaaybe SAFA higher in winter, PUFA higher in summer
 #but not to level of significance
