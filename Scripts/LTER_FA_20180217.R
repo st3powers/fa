@@ -675,3 +675,94 @@ ggplot(data=filter(dat_month_long, FA_type == "SAFA_perc_avg"),
   facet_wrap(~winter_yr)
 
 #fewer samples in iceon, higher variance, when look at year/year
+
+# ----> communities at high secchi
+
+#from SLSP_working.R
+fa_secchi <- read.csv("../Data/fa_secchi_data.csv", stringsAsFactors = FALSE)
+
+#seasonal patterns
+ggplot(fa_secchi, aes(mean_secnview, (MUFA_perc_avg + PUFA_perc_avg), label = winter_yr)) +
+  geom_text() +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season) +
+  ggtitle("MUFA/PUFA vs mean secchi")
+
+#merge with lter community data frame
+dat <- merge(lter_use, fa_secchi, by = c("lakeid", "winter_yr", "season"))
+
+#what are the high secchi, high FA winter communities?
+#from above plot:
+dat_high <- filter(dat, lakeid == "ME" & winter_yr %in% c(1998, 2005, 2007))
+
+#GENUS LEVEL
+dat_high_agg_genus <- dat_high %>% 
+  #remove some columns
+  select(-month, -division, -taxa_name, -biomass_ww_m) %>% 
+  #within a lake/year/season and genus
+  group_by(lakeid, winter_yr, season, genus) %>% 
+  #what's the TOTAL biomass (dry weight) for each GENUS
+  mutate(genus_biomass_dw = sum(biomass_dw)) %>% 
+  ungroup() %>% 
+  select(-biomass_dw) %>% 
+  unique() %>% 
+  #within a lake/year/season
+  group_by(lakeid, winter_yr, season) %>% 
+  #what's the total biomass for ALL
+  mutate(total_biomass_dw = sum(genus_biomass_dw)) %>% 
+  #what's the proportion for each genus
+  mutate(prop_biomass_genus = genus_biomass_dw/total_biomass_dw * 100) %>% 
+  #keep only columns of interest
+  select(lakeid, winter_yr, season, genus, prop_biomass_genus, mean_secnview,
+         #FAs are by lake/year/season
+         MUFA_perc_avg, PUFA_perc_avg, SAFA_perc_avg) %>% 
+  as.data.frame() %>% 
+  unique() %>% 
+  #fix blanks in genus
+  mutate(genus = ifelse(genus == "", "Unknown", genus))
+  
+#make long
+dat_high_agg_genus_long <- dat_high_agg_genus %>% 
+  dcast(lakeid + winter_yr + season + 
+          MUFA_perc_avg + PUFA_perc_avg + SAFA_perc_avg +
+          mean_secnview ~ genus, value.var = "prop_biomass_genus")
+  
+#DIVISION LEVEL
+dat_high_agg_division <- dat_high %>% 
+  #remove some columns
+  select(-month, -genus, -taxa_name, -biomass_ww_m) %>% 
+  #within a lake/year/season and division
+  group_by(lakeid, winter_yr, season, division) %>% 
+  #what's the TOTAL biomass (dry weight) for each division
+  mutate(division_biomass_dw = sum(biomass_dw)) %>% 
+  ungroup() %>% 
+  select(-biomass_dw) %>% 
+  unique() %>% 
+  #within a lake/year/season
+  group_by(lakeid, winter_yr, season) %>% 
+  #what's the total biomass for ALL
+  mutate(total_biomass_dw = sum(division_biomass_dw)) %>% 
+  #what's the proportion for each division
+  mutate(prop_biomass_division = division_biomass_dw/total_biomass_dw * 100) %>% 
+  #keep only columns of interest
+  select(lakeid, winter_yr, season, division, prop_biomass_division, mean_secnview,
+         #FAs are by lake/year/season
+         MUFA_perc_avg, PUFA_perc_avg, SAFA_perc_avg) %>% 
+  as.data.frame() %>% 
+  unique() 
+
+#make long
+dat_high_agg_division_long <- dat_high_agg_division %>% 
+  dcast(lakeid + winter_yr + season + 
+          MUFA_perc_avg + PUFA_perc_avg + SAFA_perc_avg +
+          mean_secnview ~ division, value.var = "prop_biomass_division") %>% 
+  arrange(season, winter_yr) %>% 
+  filter(season == "iceon")
+
+dat_high_agg_division_long 
+#2005/2007 sort of similar...ish composition
+#highest % is cryptophyta
+
+  
+  
+  

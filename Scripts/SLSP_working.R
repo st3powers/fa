@@ -142,22 +142,35 @@ fa_secchi <- merge(secchi_agg, madison_fa,
                    #keep only rows in both
                    by = c("lakeid", "winter_yr", "season"), all = FALSE)
 
+#write.csv(fa_secchi, "../Data/fa_secchi_data.csv", row.names = FALSE)
+
 #recreate SH plot
 ggplot(fa_secchi, aes(max_secnview, (MUFA_perc_avg + PUFA_perc_avg))) +
   geom_point(aes(color = lakeid)) +
-  facet_wrap(~season)
+  facet_wrap(~season) +
+  ggtitle("MUFA/PUFA vs max secchi")
 
 ggplot(fa_secchi, aes(max_secnview, SAFA_perc_avg)) +
   geom_point(aes(color = lakeid)) +
-  facet_wrap(~season)
+  facet_wrap(~season) +
+  ggtitle("SAFA vs max secchi")
 
 ggplot(fa_secchi, aes(mean_secnview, (MUFA_perc_avg + PUFA_perc_avg))) +
   geom_point(aes(color = lakeid)) +
-  facet_wrap(~season)
+  facet_wrap(~season) +
+  ggtitle("MUFA/PUFA vs mean secchi")
 
 ggplot(fa_secchi, aes(mean_secnview, SAFA_perc_avg)) +
   geom_point(aes(color = lakeid)) +
-  facet_wrap(~season)
+  facet_wrap(~season) +
+  ggtitle("SAFA vs mean secchi")
+
+#what are the far right communities?
+ggplot(fa_secchi, aes(mean_secnview, (MUFA_perc_avg + PUFA_perc_avg), label = winter_yr)) +
+  geom_text() +
+  geom_point(aes(color = lakeid)) +
+  facet_wrap(~season) +
+  ggtitle("MUFA/PUFA vs mean secchi")
 
 
 #=============================================================================
