@@ -521,7 +521,15 @@ full_dat_weighted_date_FA <- full_dat_weighted_small %>%
   group_by(lakeid, winter_yr, month, season) %>% 
   summarize(MUFA_perc = sum(sumMUFA_prop, na.rm = TRUE),
             PUFA_perc = sum(sumPUFA_prop, na.rm = TRUE),
-            SAFA_perc = sum(sumSAFA_prop, na.rm = TRUE)) %>% 
+            SAFA_perc = sum(sumSAFA_prop, na.rm = TRUE),
+            c18.2w6_perc = sum(c18.2w6_prop, na.rm = TRUE),
+            c18.3w6_perc = sum(c18.3w6_prop, na.rm = TRUE),
+            c18.3w3_perc = sum(c18.3w3_prop, na.rm = TRUE),
+            c18.4w3_perc = sum(c18.4w3_prop, na.rm = TRUE),
+            c18.5w3_perc = sum(c18.5w3_prop, na.rm = TRUE),
+            c20.4w6_perc = sum(c20.4w6_prop, na.rm = TRUE),
+            c20.5w3_perc = sum(c20.5w3_prop, na.rm = TRUE),
+            c22.6w3_perc = sum(c22.6w3_prop, na.rm = TRUE)) %>% 
   as.data.frame()
 
 # summary(full_dat_weighted_date_FA) 
@@ -541,7 +549,15 @@ full_dat_weighted_month_season_FA <- full_dat_weighted_date_FA %>%
   group_by(lakeid, winter_yr, season, month) %>% 
   summarize(MUFA_perc_avg = mean(MUFA_perc, na.rm = TRUE),
             PUFA_perc_avg = mean(PUFA_perc, na.rm = TRUE),
-            SAFA_perc_avg = mean(SAFA_perc, na.rm = TRUE)) %>% 
+            SAFA_perc_avg = mean(SAFA_perc, na.rm = TRUE),
+            c18.2w6_perc_avg = mean(c18.2w6_perc, na.rm = TRUE),
+            c18.3w6_perc_avg = mean(c18.3w6_perc, na.rm = TRUE),
+            c18.3w3_perc_avg = mean(c18.3w3_perc, na.rm = TRUE),
+            c18.4w3_perc_avg = mean(c18.4w3_perc, na.rm = TRUE),
+            c18.5w3_perc_avg = mean(c18.5w3_perc, na.rm = TRUE),
+            c20.4w6_perc_avg = mean(c20.4w6_perc, na.rm = TRUE),
+            c20.5w3_perc_avg = mean(c20.5w3_perc, na.rm = TRUE),
+            c22.6w3_perc_avg = mean(c22.6w3_perc, na.rm = TRUE)) %>% 
   as.data.frame()
 
 #aggregate to lake/year/season
@@ -550,11 +566,18 @@ full_dat_weighted_yr_season_FA <- full_dat_weighted_date_FA %>%
   group_by(lakeid, winter_yr, season) %>% 
   summarize(MUFA_perc_avg = mean(MUFA_perc, na.rm = TRUE),
             PUFA_perc_avg = mean(PUFA_perc, na.rm = TRUE),
-            SAFA_perc_avg = mean(SAFA_perc, na.rm = TRUE)) %>% 
+            SAFA_perc_avg = mean(SAFA_perc, na.rm = TRUE),
+            c18.2w6_perc_avg = mean(c18.2w6_perc, na.rm = TRUE),
+            c18.3w6_perc_avg = mean(c18.3w6_perc, na.rm = TRUE),
+            c18.3w3_perc_avg = mean(c18.3w3_perc, na.rm = TRUE),
+            c18.4w3_perc_avg = mean(c18.4w3_perc, na.rm = TRUE),
+            c18.5w3_perc_avg = mean(c18.5w3_perc, na.rm = TRUE),
+            c20.4w6_perc_avg = mean(c20.4w6_perc, na.rm = TRUE),
+            c20.5w3_perc_avg = mean(c20.5w3_perc, na.rm = TRUE),
+            c22.6w3_perc_avg = mean(c22.6w3_perc, na.rm = TRUE)) %>% 
   as.data.frame()
 #note: doesn't add up to quite 100% (working with averages)
 #also, data only goes to 2013 (may need to adjust iceon/iceoff dates from raw LTER snow/ice data)
-
 
 summary(full_dat_weighted_yr_season_FA)
 #MUFA: 11-36
@@ -764,5 +787,41 @@ dat_high_agg_division_long
 #highest % is cryptophyta
 
   
-  
-  
+# ----> OMEGAS
+
+head(full_dat_weighted_yr_season_FA)
+
+omegas_chains <- full_dat_weighted_yr_season_FA %>% 
+    #total omega 3 prop of PUFAs
+    mutate(total_omega3 = c18.3w3_perc_avg +  
+             c18.4w3_perc_avg +  
+             c18.5w3_perc_avg +  
+             c20.5w3_perc_avg +  
+             c22.6w3_perc_avg,
+           #total omega 6 prop of PUFAs
+           total_omega6 = c18.2w6_perc_avg +  
+             c18.3w6_perc_avg +  
+             c20.4w6_perc_avg,
+           #total short chain PUFAs (<20 C)
+           total_short_chain = c18.2w6_perc_avg + 
+             c18.3w6_perc_avg + 
+             c18.3w3_perc_avg + 
+             c18.4w3_perc_avg + 
+             c18.5w3_perc_avg,
+           #total long chain PUFAs (AG defined as >= 20 C)
+           total_long_chain = c20.4w6_perc_avg + 
+             c20.5w3_perc_avg + 
+             c22.6w3_perc_avg) %>% 
+  mutate(omega6_omega3_ratio = total_omega6/total_omega3,
+         #may want just long chain PUFA down the road (%)
+         longchainPUFA = (total_long_chain * PUFA_perc_avg)/100,
+         #total long chain is % of PUFAs that are long chain
+         #divide by PUFAs prop to get ratio with SAFA
+         #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
+         longchainPUFA_SAFA = longchainPUFA/ SAFA_perc_avg)
+      
+#plot
+ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = lakeid), width = 0.1) +
+  ggtitle("All lakes, omega6:omega3 ratio for PUFAs")  
