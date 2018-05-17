@@ -366,6 +366,8 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
 
 head(full_dat_weighted_comm_agg)
 
+write.csv(full_dat_weighted_comm_agg, "../Data/EULI_lake_seasonal_community_FAs.csv", row.names = FALSE)
+
 #===========================================================================
 # ----> look at lakes aggregated to seasons across years (MUFA/PUFA/SAFA)
 #===========================================================================

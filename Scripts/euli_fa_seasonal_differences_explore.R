@@ -3,13 +3,16 @@
 #=========================================================#
 
 #see "euli_fa_alternate_aggregate.R" for processing up to this point
-#reads in full_dat_weighted_comm from that script
+#reads in full_dat_weighted_comm_agg from that script
+#aggregated to lake/season (means, collapsed over years)
 
+# 1)
 # for each lake, summer - winter as response variable
 # is this signif diff from zero?
-# do for FA props (so...differncing props...)
+# do for FA props (so...differencing proportions...)
 # do confidence intervals overlap with zero?
 # 
+# 2)
 # euli lakes - look at trophic state
 # difference data as response
 # does, say TP, affect PUFAs/SAFAs?
@@ -28,12 +31,12 @@ library(ggplot2)
 
 # ----> read in data
 
-dat <- read.csv("../Data/EULI_lake_year_season_community_FAs.csv", stringsAsFactors = FALSE)
+dat <- read.csv("../Data/EULI_lake_seasonal_community_FAs.csv", stringsAsFactors = FALSE)
 
 head(dat)
 
 #=========================================================#
-## ================ SEASONAL DIFFERENCES ================ ##
+## ================ SEASONAL DIFFERENCES =============== ##
 #=========================================================#
 
 # ----> find seasonal differences
@@ -41,10 +44,15 @@ head(dat)
 #reorganize so season across top
 dat_seasonal <- dat %>% 
   #make long
-  melt(id.vars = c("lakename", "year", "season")) %>% 
-  rename(FA_type = variable) %>% 
+  melt(id.vars = c("lakename", "n_years", "season")) %>% 
+  #split variable into agg and type
+  separate(variable, into =c("agg", "FA_type"), sep = "__") %>% 
+  #keep only averages
+  filter(agg == "seasonal_avg") %>% 
+  #remove that column
+  select(-agg) %>% 
   #make wide
-  dcast(lakename + year + FA_type ~ season, value.var = "value")
+  dcast(lakename + n_years + FA_type ~ season, value.var = "value")
 
 #find differences (summer-winter)
 dat_seasonal_diffs <- dat_seasonal %>% 
@@ -54,9 +62,10 @@ dat_seasonal_diffs <- dat_seasonal %>%
 
 #is sample mean (mean of all diffs) different from zero?
 #not sure that's exactly what we want...
-#but try with all lakes first, then by lake (for lakes with >1 year)
 
-#quick check for normality
+#one value per lake/season/FA_type
+
+#quick check for normality (across ALL fa types)
 hist(dat_seasonal_diffs$summer_winter_diff)
 #not bad
 
@@ -73,17 +82,17 @@ qqnorm(dat_seasonal_diffs$summer_winter_diff)
 #one sample t-test
 t.test(dat_seasonal_diffs$summer_winter_diff, mu=0, alternative = "two.sided")
 
-# t = -1.9038, df = 626, p-value = 0.05739
+# data:  dat_seasonal_diffs$summer_winter_diff
+# t = -0.71741, df = 164, p-value = 0.4741
 # alternative hypothesis: true mean is not equal to 0
 # 95 percent confidence interval:
-#   -0.65465899  0.01014283
+#   -0.7761753  0.3624698
 # sample estimates:
 #   mean of x 
-# -0.3222581 
+# -0.2068528 
 
 #confidence interval includes zero
 
-#that's for all lakes, all FAs
 
 # ----> PUFA only
 
@@ -91,18 +100,19 @@ dat_pufa <- dat_seasonal_diffs %>%
   filter(FA_type == "MUFA_perc")
 
 hist(dat_pufa$summer_winter_diff)
+#not really...
 qqnorm(dat_pufa$summer_winter_diff)
-#not...ideal
+#meh
 
 t.test(dat_pufa$summer_winter_diff, mu=0, alternative = "two.sided")
 # data:  dat_pufa$summer_winter_diff
-# t = -1.2739, df = 56, p-value = 0.208
+# t = 0.3223, df = 14, p-value = 0.752
 # alternative hypothesis: true mean is not equal to 0
 # 95 percent confidence interval:
-#   -3.4656855  0.7713384
+#   -3.466713  4.692852
 # sample estimates:
 #   mean of x 
-# -1.347174 
+# 0.6130696 
 
 #CI crosses zero
 
@@ -120,12 +130,41 @@ qqnorm(dat_safa$summer_winter_diff)
 
 t.test(dat_safa$summer_winter_diff, mu=0, alternative = "two.sided")
 # data:  dat_safa$summer_winter_diff
-# t = 5.5855, df = 56, p-value = 7.108e-07
+# t = 1.9383, df = 14, p-value = 0.07302
 # alternative hypothesis: true mean is not equal to 0
 # 95 percent confidence interval:
-#   2.363166 5.006220
+#   -0.1669648  3.3014506
 # sample estimates:
 #   mean of x 
-# 3.684693 
+# 1.567243 
 
-#not even closer to zero
+#again, crosses zero
+
+#=========================================================#
+## =================== TROPHIC STATE =================== ##
+#=========================================================#
+
+euli_full <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
+
+#smaller subset
+euli_small <- euli_full %>% 
+  select(lakename, year, season, watertemp,
+         avetotphos, avetotdissphos, 
+         avetotnitro, avetotdissnitro,
+         avetotdoc, avecolor, avechla)
+
+#merge, keep only lakes of interest
+euli_fa <- merge(dat, euli_small, by = c("lakename", "year", "season"), all.x = TRUE)
+
+head(euli_fa)
+summary(euli_fa)
+#various missing - work with what have
+
+
+
+
+
+
+
+
+
