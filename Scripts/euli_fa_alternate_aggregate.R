@@ -325,6 +325,9 @@ full_dat_weighted_comm <- full_dat_weighted %>%
 
 head(full_dat_weighted_comm)
 
+#write to csv for use in other scripts
+write.csv(full_dat_weighted_comm, "../Data/EULI_lake_year_season_community_FAs.csv", row.names = FALSE)
+
 #make a verion with one point per lake/season (aggregate across years)
 #include standard deviation as measure of variance, as well as count
 full_dat_weighted_comm_agg <- full_dat_weighted_comm %>% 
@@ -361,6 +364,7 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
 #   mutate(total_FA = seasonal_avg__MUFA_perc + seasonal_avg__PUFA_perc + seasonal_avg__SAFA_perc) %>% 
 #   summary()
 
+head(full_dat_weighted_comm_agg)
 
 #===========================================================================
 # ----> look at lakes aggregated to seasons across years (MUFA/PUFA/SAFA)
