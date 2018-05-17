@@ -153,18 +153,73 @@ euli_small <- euli_full %>%
          avetotnitro, avetotdissnitro,
          avetotdoc, avecolor, avechla)
 
+#need to find lake/season averages
+euli_seasonal <- euli_small %>% 
+  melt(id.vars = c("lakename", "year", "season")) %>% 
+  #find seasonal averages for each lake (for each variable)
+  group_by(lakename, season, variable) %>% 
+  summarize(n_years = n_distinct(year),
+            avg_val = mean(value, na.rm = TRUE)) %>% 
+  as.data.frame()
+
+#make wide again - full FA data
+euli_seasonal_wide <- euli_seasonal %>% 
+  dcast(lakename + n_years + season ~ variable, value.var = "avg_val")
+
 #merge, keep only lakes of interest
-euli_fa <- merge(dat, euli_small, by = c("lakename", "year", "season"), all.x = TRUE)
+euli_fa <- merge(dat, euli_seasonal_wide, by = c("lakename", "n_years", "season"), all.x = TRUE)
 
 head(euli_fa)
 summary(euli_fa)
 #various missing - work with what have
 
+#color/TP to get blue/green/brown/murky
+filter(euli_fa, !is.na(avecolor) & !is.na(avetotphos))
+#nope, too many are missing color
 
+# ----> PUFA
 
+#using just phos
+ggplot(euli_fa, aes(avetotphos, seasonal_avg__PUFA_perc)) +
+  geom_point(aes(color = lakename)) + 
+  #geom_point(aes(color = as.factor(n_years))) +
+  facet_wrap(~season)+
+  ggtitle("TP/PUFA")
+#more TP, more PUFA in *summer*
+#more TP not helping PUFA in winter
 
+#chla
+ggplot(euli_fa, aes(avechla, seasonal_avg__PUFA_perc)) +
+  geom_point(aes(color = lakename)) + 
+  #geom_point(aes(color = as.factor(n_years))) +
+  facet_wrap(~season) +
+  ggtitle("chla/PUFA")
+#more chla, less chla in *summer*
+#more chla, not really an impact in winter
 
+# ----> what about SAFA?
+ggplot(euli_fa, aes(avetotphos, seasonal_avg__SAFA_perc)) +
+  geom_point(aes(color = lakename)) + 
+  #geom_point(aes(color = as.factor(n_years))) +
+  facet_wrap(~season)+
+  ggtitle("TP/SAFA")
+#no real impact of TP either season
 
+ggplot(euli_fa, aes(avechla, seasonal_avg__SAFA_perc)) +
+  geom_point(aes(color = lakename)) + 
+  #geom_point(aes(color = as.factor(n_years))) +
+  facet_wrap(~season) +
+  ggtitle("chla/SAFA")
+#increase in chla sort of increase in SAFA in *summer*
+#not really in winter
 
+# ----> using differences
 
+dat_seasonal_diffs_small <- dat_seasonal_diffs %>%
+  select(-iceoff, -iceon)
+
+euli_fa_diffs <- merge(dat_seasonal_diffs_small, euli_seasonal_wide, by = c("lakename", "n_years"), all.x = TRUE)
+
+#hmmm...difference chla/TN/TP?
+#or categorize by some breakpoint?
 
