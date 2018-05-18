@@ -97,22 +97,26 @@ t.test(dat_seasonal_diffs$summer_winter_diff, mu=0, alternative = "two.sided")
 # ----> PUFA only
 
 dat_pufa <- dat_seasonal_diffs %>% 
-  filter(FA_type == "MUFA_perc")
+  filter(FA_type == "PUFA_perc")
 
 hist(dat_pufa$summer_winter_diff)
 #not really...
 qqnorm(dat_pufa$summer_winter_diff)
 #meh
+shapiro.test(dat_pufa$summer_winter_diff)
+# data:  dat_pufa$summer_winter_diff
+# W = 0.97436, p-value = 0.9166
+
 
 t.test(dat_pufa$summer_winter_diff, mu=0, alternative = "two.sided")
 # data:  dat_pufa$summer_winter_diff
-# t = 0.3223, df = 14, p-value = 0.752
+# t = -1.5256, df = 14, p-value = 0.1494
 # alternative hypothesis: true mean is not equal to 0
 # 95 percent confidence interval:
-#   -3.466713  4.692852
+#   -6.106918  1.030184
 # sample estimates:
 #   mean of x 
-# 0.6130696 
+# -2.538367 
 
 #CI crosses zero
 
@@ -125,6 +129,9 @@ hist(dat_safa$summer_winter_diff)
 #skewed
 qqnorm(dat_safa$summer_winter_diff)
 #yeah, not normal
+shapiro.test(dat_safa$summer_winter_diff)
+# data:  dat_safa$summer_winter_diff
+# W = 0.77148, p-value = 0.001619
 
 #but testing just because
 
@@ -139,6 +146,29 @@ t.test(dat_safa$summer_winter_diff, mu=0, alternative = "two.sided")
 # 1.567243 
 
 #again, crosses zero
+
+# ----> MUFAs
+
+dat_mufa <- dat_seasonal_diffs %>% 
+  filter(FA_type == "MUFA_perc")
+
+hist(dat_mufa$summer_winter_diff)
+qqnorm(dat_mufa$summer_winter_diff)
+shapiro.test(dat_mufa$summer_winter_diff)
+# data:  dat_mufa$summer_winter_diff
+# W = 0.98202, p-value = 0.9814
+
+t.test(dat_mufa$summer_winter_diff, mu=0, alternative = "two.sided")
+# data:  dat_mufa$summer_winter_diff
+# t = 0.3223, df = 14, p-value = 0.752
+# alternative hypothesis: true mean is not equal to 0
+# 95 percent confidence interval:
+#   -3.466713  4.692852
+# sample estimates:
+#   mean of x 
+# 0.6130696 
+
+
 
 #=========================================================#
 ## =================== TROPHIC STATE =================== ##
