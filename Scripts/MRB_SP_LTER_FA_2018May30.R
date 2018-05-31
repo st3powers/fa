@@ -606,16 +606,23 @@ full_dat_weighted_yr_season_FA_long <- melt(data = full_dat_weighted_yr_season_F
                                        measure.vars = c("MUFA_perc_avg","PUFA_perc_avg","SAFA_perc_avg"),
                                        id.vars = c("lakeid","season"))
 
+full_dat_weighted_yr_season_FA_long$variable<-as.character(full_dat_weighted_yr_season_FA_long$variable)
+full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_FA_long$variable=="MUFA_perc_avg")]<-"% MUFA"
+full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_FA_long$variable=="PUFA_perc_avg")]<-"% PUFA"
+full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_FA_long$variable=="SAFA_perc_avg")]<-"% SAFA"
 
 madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season, y = value)) + 
-  geom_boxplot() + 
-  geom_point(aes(color = lakeid)) + 
+  geom_boxplot(outlier.shape="") +
+  geom_jitter(aes(color = lakeid), width = 0.1,size=0.7) +
+ # geom_point(aes(color = lakeid)) + 
   facet_wrap(~variable) + 
   scale_color_discrete(name = "Lake ID") +
-  xlab("Season") + ylab("FA Average %") 
+  xlab("Season") + ylab("FA Average %")  +
+  theme_bw()
 
 
-png(filename = "../Figures/Madison_FA_plot.png",width = 6, height = 6, units = "in", res = 500)
+#png(filename = "../Figures/Madison_FA_plot.png",width = 6, height = 6, units = "in", res = 500)
+png(filename = "../Figures/Madison_FA_plot.png",width = 4, height = 2.5, units = "in", res = 500)
 madison_FA
 dev.off()
 
@@ -654,13 +661,15 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
          longchainPUFA_SAFA = longchainPUFA/ SAFA_perc_avg)
 
 #plot
-nadison_omega_ratio_plot <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
-  geom_boxplot() +
-  geom_jitter(aes(color = lakeid), width = 0.1) +
+madison_omega_ratio_plot <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
+  geom_boxplot(outlier.shape="") +
+  geom_jitter(aes(color = lakeid), width = 0.1, size=0.6) +
   ylab("Omega 6:Omega 3 Ratio") + xlab("Season") + 
-  scale_color_discrete(name = "Lake ID") 
+  scale_color_discrete(name = "Lake ID") +
+  theme_bw()
   
-png(filename = "../Figures/madison_omega_ratio_plot.png",width = 6, height = 6, units = "in", res = 500)
+#png(filename = "../Figures/madison_omega_ratio_plot.png",width = 6, height = 6, units = "in", res = 500)
+png(filename = "../Figures/madison_omega_ratio_plot.png",width = 2.5, height = 2.25, units = "in", res = 500)
 madison_omega_ratio_plot
 dev.off()
 
