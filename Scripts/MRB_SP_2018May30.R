@@ -405,3 +405,5 @@ ggplot(data = subset(dat_long_seasonal_points,dat_long_seasonal_points$FA_type %
   geom_boxplot() + 
   geom_point(aes(color = season)) + 
   facet_wrap(~FA_type)
+
+

@@ -595,6 +595,73 @@ write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_se
 LTER_Madison_weighted_year_season_FA<-read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv")
 
 
+#MRB edits below:
 
+View(full_dat_weighted_yr_season_FA)
+
+
+#Figure 3:
+
+full_dat_weighted_yr_season_FA_long <- melt(data = full_dat_weighted_yr_season_FA, 
+                                       measure.vars = c("MUFA_perc_avg","PUFA_perc_avg","SAFA_perc_avg"),
+                                       id.vars = c("lakeid","season"))
+
+
+madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season, y = value)) + 
+  geom_boxplot() + 
+  geom_point(aes(color = lakeid)) + 
+  facet_wrap(~variable) + 
+  scale_color_discrete(name = "Lake ID") +
+  xlab("Season") + ylab("FA Average %") 
+
+
+png(filename = "../Figures/Madison_FA_plot.png",width = 6, height = 6, units = "in", res = 500)
+madison_FA
+dev.off()
+
+
+#Figure 4: 
+
+#Taken from old version of script
+
+omegas_chains <- full_dat_weighted_yr_season_FA %>% 
+  #total omega 3 prop of PUFAs
+  mutate(total_omega3 = c18.3w3_perc_avg +  
+           c18.4w3_perc_avg +  
+           c18.5w3_perc_avg +  
+           c20.5w3_perc_avg +  
+           c22.6w3_perc_avg,
+         #total omega 6 prop of PUFAs
+         total_omega6 = c18.2w6_perc_avg +  
+           c18.3w6_perc_avg +  
+           c20.4w6_perc_avg,
+         #total short chain PUFAs (<20 C)
+         total_short_chain = c18.2w6_perc_avg + 
+           c18.3w6_perc_avg + 
+           c18.3w3_perc_avg + 
+           c18.4w3_perc_avg + 
+           c18.5w3_perc_avg,
+         #total long chain PUFAs (AG defined as >= 20 C)
+         total_long_chain = c20.4w6_perc_avg + 
+           c20.5w3_perc_avg + 
+           c22.6w3_perc_avg) %>% 
+  mutate(omega6_omega3_ratio = total_omega6/total_omega3,
+         #may want just long chain PUFA down the road (%)
+         longchainPUFA = (total_long_chain * PUFA_perc_avg)/100,
+         #total long chain is % of PUFAs that are long chain
+         #divide by PUFAs prop to get ratio with SAFA
+         #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
+         longchainPUFA_SAFA = longchainPUFA/ SAFA_perc_avg)
+
+#plot
+nadison_omega_ratio_plot <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = lakeid), width = 0.1) +
+  ylab("Omega 6:Omega 3 Ratio") + xlab("Season") + 
+  scale_color_discrete(name = "Lake ID") 
+  
+png(filename = "../Figures/madison_omega_ratio_plot.png",width = 6, height = 6, units = "in", res = 500)
+madison_omega_ratio_plot
+dev.off()
 
 
