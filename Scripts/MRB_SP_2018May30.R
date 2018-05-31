@@ -391,6 +391,7 @@ euli_onelake_oneseason_onevalue<-ggplot(data = full_dat_weighted_comm_ag_long, a
   geom_jitter(aes(color = season), width = 0.1,size=0.7) +  
   facet_wrap(~variable) +
   ylab('% of Total FA')+
+  xlab('Season')+
   theme_bw()+
   theme(legend.position="none")
 
