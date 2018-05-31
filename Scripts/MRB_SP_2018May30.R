@@ -378,14 +378,26 @@ full_dat_weighted_comm_ag_long <- melt(data = full_dat_weighted_comm_agg,
      measure.vars = c("seasonal_avg__MUFA_perc","seasonal_avg__PUFA_perc","seasonal_avg__SAFA_perc"),
      id.vars = c("lakename","season","n_years"))
 
+full_dat_weighted_comm_ag_long$variable<-as.character(full_dat_weighted_comm_ag_long$variable)
+full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$variable=="seasonal_avg__MUFA_perc")]<-"% MUFA"
+full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$variable=="seasonal_avg__PUFA_perc")]<-"% PUFA"
+full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$variable=="seasonal_avg__SAFA_perc")]<-"% SAFA"
 
 
-ggplot(data = full_dat_weighted_comm_ag_long, aes(x = season, y = value)) + 
-  geom_boxplot() + 
-  geom_point(aes(color = season)) + 
-  facet_wrap(~variable)
 
+euli_onelake_oneseason_onevalue<-ggplot(data = full_dat_weighted_comm_ag_long, aes(x = season, y = value)) + 
+  geom_boxplot(outlier.shape="") +
+#  geom_point(aes(color = season)) + 
+  geom_jitter(aes(color = season), width = 0.1,size=0.7) +  
+  facet_wrap(~variable) +
+  ylab('% of Total FA')+
+  theme_bw()+
+  theme(legend.position="none")
 
+#png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",width = 6, height = 6, units = "in", res = 500)
+png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",width = 4, height = 2.5, units = "in", res = 500)
+euli_onelake_oneseason_onevalue
+dev.off()
 
 ###########################
 

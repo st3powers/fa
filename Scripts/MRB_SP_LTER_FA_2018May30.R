@@ -617,7 +617,7 @@ madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season,
  # geom_point(aes(color = lakeid)) + 
   facet_wrap(~variable) + 
   scale_color_discrete(name = "Lake ID") +
-  xlab("Season") + ylab("FA Average %")  +
+  xlab("Season") + ylab("% of Total FA")  +
   theme_bw()
 
 
