@@ -326,7 +326,7 @@ snowicechllight.shallow<-subset(snowicechllight.aggdepthgroups,snowicechllight.a
 snowicechllight.shallow<-subset(snowicechllight.shallow,snowicechllight.shallow$lakeid %in% c("AL","BM","CB","CR","SP","TB","TR"))
 
 lightchla_7lakes<-ggplot(snowicechllight.shallow,aes(x=light,y=chl)) +
-  geom_point()+
+  geom_point(size=0.7)+
   ylab("Chlorophyll a")+
   xlab("PAR (uM per m2 per sec)")+
   facet_wrap(~lakeid,scales = "free")+
@@ -342,7 +342,7 @@ lightchla_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lake
 
 #snowicechllight.shallow<-subset(snowicechllight.aggdepthgroups,snowicechllight.aggdepthgroups$depthgroup=="0-2")
 lightsnow_7lakes<-ggplot(snowicechllight.shallow,aes(x=avsnow,y=light)) +
-  geom_point()+
+  geom_point(size=0.7)+
   xlab("Snow Depth (cm)")+
   ylab("PAR (uM per m2 per sec)")+
   facet_wrap(~lakeid,scales = "free")+
@@ -355,11 +355,11 @@ lightsnow_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lake
 #  facet_wrap(~lakeid,scales = "free")+
   theme_bw()
 
-png(filename = "../Figures/lightchla_7lakes.png",width = 5, height = 5, units = "in", res = 500)
+png(filename = "../Figures/lightchla_7lakes.png",width = 4, height = 4, units = "in", res = 500)
 lightchla_7lakes
 dev.off()
 
-png(filename = "../Figures/lightsnow_7lakes.png",width = 5, height = 5, units = "in", res = 500)
+png(filename = "../Figures/lightsnow_7lakes.png",width = 4, height = 4, units = "in", res = 500)
 lightsnow_7lakes
 dev.off()
 
