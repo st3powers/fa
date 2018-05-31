@@ -674,3 +674,26 @@ madison_omega_ratio_plot
 dev.off()
 
 
+######################
+# fa ~ secchi 
+
+fa_secchi <- read.csv("../Data/fa_secchi_data.csv", stringsAsFactors = FALSE)
+fa_secchi$winter_yr2<-substr(fa_secchi$winter_yr,3,4)
+fa_secchi$winter_yr2[which(fa_secchi$season=="iceoff")]<-""
+fa_secchi$fill<-"Y"
+fa_secchi$fill[which(fa_secchi$season=="iceoff")]<-"N"
+#fa_secchi$shape<-24
+#fa_secchi$shape[which(fa_secchi$season=="iceoff")]<-20
+
+#seasonal patterns
+fasecchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x=mean_secnview, y=(MUFA_perc_avg + PUFA_perc_avg))) +
+  geom_point(size=3, aes(shape = season , colour= lakeid)) +
+  ylab("MUFA + PUFA (% of Total FA)")+
+  xlab("Secchi Depth (m)")+
+  scale_shape_manual(values=c(0,16))+
+  theme_bw()
+
+png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue.png",width = 4, height = 3, units = "in", res = 500)
+fasecchi_MEMO_oneseason_onevalue
+dev.off()
+
