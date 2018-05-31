@@ -355,4 +355,19 @@ lightsnow_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lake
 #  facet_wrap(~lakeid,scales = "free")+
   theme_bw()
 
+png(filename = "../Figures/lightchla_7lakes.png",width = 5, height = 5, units = "in", res = 500)
+lightchla_7lakes
+dev.off()
 
+png(filename = "../Figures/lightsnow_7lakes.png",width = 5, height = 5, units = "in", res = 500)
+lightsnow_7lakes
+dev.off()
+
+
+png(filename = "../Figures/lightchla_BM.png",width = 2.5, height = 2.5, units = "in", res = 500)
+lightchla_BM
+dev.off()
+
+png(filename = "../Figures/lightsnow_BM.png",width = 2.5, height = 2.5, units = "in", res = 500)
+lightsnow_BM
+dev.off()
