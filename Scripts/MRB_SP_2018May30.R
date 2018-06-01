@@ -392,6 +392,7 @@ euli_onelake_oneseason_onevalue<-ggplot(data = full_dat_weighted_comm_ag_long, a
   facet_wrap(~variable) +
   ylab('% of Total FA')+
   xlab('Season')+
+  scale_color_manual(values = c("royalblue3","green3"))+
   theme_bw()+
   theme(legend.position="none")
 

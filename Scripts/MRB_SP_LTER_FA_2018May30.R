@@ -616,8 +616,8 @@ madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season,
   geom_jitter(aes(color = lakeid), width = 0.1,size=0.7) +
  # geom_point(aes(color = lakeid)) + 
   facet_wrap(~variable) + 
-  scale_color_discrete(name = "Lake ID") +
   xlab("Season") + ylab("% of Total FA")  +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3"))+
   theme_bw()
 
 
@@ -665,11 +665,11 @@ madison_omega_ratio_plot <- ggplot(omegas_chains, aes(season, omega6_omega3_rati
   geom_boxplot(outlier.shape="") +
   geom_jitter(aes(color = lakeid), width = 0.1, size=0.6) +
   ylab("Omega 6:Omega 3 Ratio") + xlab("Season") + 
-  scale_color_discrete(name = "Lake ID") +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
   theme_bw()
   
 #png(filename = "../Figures/madison_omega_ratio_plot.png",width = 6, height = 6, units = "in", res = 500)
-png(filename = "../Figures/madison_omega_ratio_plot.png",width = 2.5, height = 2.25, units = "in", res = 500)
+png(filename = "madison_omega_ratio_plot.png",width = 2.5, height = 2.25, units = "in", res = 500)
 madison_omega_ratio_plot
 dev.off()
 
@@ -690,7 +690,8 @@ fasecchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x=mean_secnview, y=(MUFA
   geom_point(size=3, aes(shape = season , colour= lakeid)) +
   ylab("MUFA + PUFA (% of Total FA)")+
   xlab("Secchi Depth (m)")+
-  scale_shape_manual(values=c(0,16))+
+  scale_shape_manual(name = "Season", values=c(0,16))+
+  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3"))+
   theme_bw()
 
 png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue.png",width = 4, height = 3, units = "in", res = 500)

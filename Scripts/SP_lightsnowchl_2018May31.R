@@ -326,14 +326,15 @@ snowicechllight.shallow<-subset(snowicechllight.aggdepthgroups,snowicechllight.a
 snowicechllight.shallow<-subset(snowicechllight.shallow,snowicechllight.shallow$lakeid %in% c("AL","BM","CB","CR","SP","TB","TR"))
 
 lightchla_7lakes<-ggplot(snowicechllight.shallow,aes(x=light,y=chl)) +
-  geom_point(size=0.7)+
+  geom_point(size=0.7, color = "royalblue3")+
   ylab("Chlorophyll a")+
   xlab("PAR (uM per m2 per sec)")+
   facet_wrap(~lakeid,scales = "free")+
   theme_bw()
+  
 
 lightchla_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lakeid=="BM"),aes(x=light,y=chl)) +
-  geom_point()+
+  geom_point(color = "royalblue3")+
   ylab("Chlorophyll a")+
   xlab("PAR (uM per m2 per sec)")+
   theme_bw()#+
@@ -342,14 +343,14 @@ lightchla_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lake
 
 #snowicechllight.shallow<-subset(snowicechllight.aggdepthgroups,snowicechllight.aggdepthgroups$depthgroup=="0-2")
 lightsnow_7lakes<-ggplot(snowicechllight.shallow,aes(x=avsnow,y=light)) +
-  geom_point(size=0.7)+
+  geom_point(size=0.7, color = "royalblue3")+
   xlab("Snow Depth (cm)")+
   ylab("PAR (uM per m2 per sec)")+
   facet_wrap(~lakeid,scales = "free")+
   theme_bw()
 
 lightsnow_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lakeid=="BM"),aes(x=avsnow,y=light)) +
-  geom_point()+
+  geom_point(color = "royalblue3")+
   xlab("Snow Depth (cm)")+
   ylab("PAR (uM per m2 per sec)")+
 #  facet_wrap(~lakeid,scales = "free")+
