@@ -64,7 +64,7 @@ mp <- ggplot(data = study_subset, aes(x = stationlong, y = stationlat))  +   map
 mp <- mp + geom_polygon(aes(x=long, y=lat, group=group), fill='lightblue1',color='gray55', data=lakes)
 
 #Add points for lakes of interest
-mp <- mp +  geom_point(shape = 21, color="black", fill = "royalblue3", stroke = 1.5, size = 3.5)
+mp <- mp +  geom_point(shape = 21, color="black", fill = "yellow", stroke = 1.5, size = 5.5)
 
 #Make oceans blue
 mp <- mp + ylab("") + xlab("") + theme(panel.background = element_rect(fill = 'lightblue1', colour = 'lightblue1'))

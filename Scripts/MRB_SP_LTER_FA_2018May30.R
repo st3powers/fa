@@ -658,19 +658,33 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
          #total long chain is % of PUFAs that are long chain
          #divide by PUFAs prop to get ratio with SAFA
          #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
-         longchainPUFA_SAFA = longchainPUFA/ SAFA_perc_avg)
+         longchainPUFA_SAFA = longchainPUFA/ SAFA_perc_avg, 
+         omega3_omega6_ratio = total_omega3/total_omega6) #added by MRB on 6/4/18
 
 #plot
-madison_omega_ratio_plot <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
+#madison_omega_ratio_plot_6.3 <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
+#  geom_boxplot(outlier.shape="") +
+#  geom_jitter(aes(color = lakeid), width = 0.1, size=0.6) +
+#  ylab("Omega 6:Omega 3 Ratio") + xlab("Season") + 
+#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
+#  theme_bw()
+
+madison_omega_ratio_plot_3.6 <- ggplot(omegas_chains, aes(season, omega3_omega6_ratio)) +
   geom_boxplot(outlier.shape="") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size=0.6) +
-  ylab("Omega 6:Omega 3 Ratio") + xlab("Season") + 
+  geom_jitter(aes(color = lakeid), width = 0.1, size=1.5) +
+  ylab("Omega 3:Omega 6 Ratio") + xlab("Season") + 
   scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
-  theme_bw()
+  theme_bw()+
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5))) #must be used after theme_bw()
+
   
-#png(filename = "../Figures/madison_omega_ratio_plot.png",width = 6, height = 6, units = "in", res = 500)
-png(filename = "madison_omega_ratio_plot.png",width = 2.5, height = 2.25, units = "in", res = 500)
-madison_omega_ratio_plot
+#png(filename = "../Figures/madison_omega_ratio_plot3v6.png",width = 6, height = 6, units = "in", res = 500)
+png(filename = "../Figures/madison_omega_ratio_plot_3v6.png",width = 3.75, height = 4, units = "in", res = 500)
+madison_omega_ratio_plot_3.6
 dev.off()
 
 
