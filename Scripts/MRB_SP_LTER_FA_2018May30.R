@@ -592,7 +592,7 @@ write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_se
 # ============================================================== #
 
 
-LTER_Madison_weighted_year_season_FA<-read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv")
+# LTER_Madison_weighted_year_season_FA<-read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv") #this appears to be the same as full_dat_weighted_yr_season_FA
 
 
 #MRB edits below:
@@ -700,15 +700,43 @@ fa_secchi$fill[which(fa_secchi$season=="iceoff")]<-"N"
 #fa_secchi$shape[which(fa_secchi$season=="iceoff")]<-20
 
 #seasonal patterns
-fasecchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x=mean_secnview, y=(MUFA_perc_avg + PUFA_perc_avg))) +
+
+#PUFA/SAFA vs SECCHI
+fasecchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x=mean_secnview, y=(PUFA_perc_avg/SAFA_perc_avg))) +
   geom_point(size=3, aes(shape = season , colour= lakeid)) +
-  ylab("MUFA + PUFA (% of Total FA)")+
-  xlab("Secchi Depth (m)")+
-  scale_shape_manual(name = "Season", values=c(0,16))+
-  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3"))+
+  ylab("PUFA/SAFA Ratio") +
+  xlab("Secchi Depth (m)") +
+  scale_shape_manual(name = "Season", values=c(0,16)) +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
   theme_bw()
 
-png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue.png",width = 4, height = 3, units = "in", res = 500)
+png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_PUFA-SAFA.png",width = 4, height = 3, units = "in", res = 500)
 fasecchi_MEMO_oneseason_onevalue
 dev.off()
+
+#EPA:ALA VS SECCHI - MM suggested but then said not to use, retaining for now
+#fasecchi_MEMO_oneseason_onevalue_20p5_18p3<-ggplot(fa_secchi, aes(x=mean_secnview, y=(c20.5w3_perc_avg/(c18.3w3_perc_avg)))) +
+#  geom_point(size=3, aes(shape = season , colour= lakeid)) +
+#  ylab("EPA/ALA Ratio") +
+#  xlab("Secchi Depth (m)") +
+#  scale_shape_manual(name = "Season", values=c(0,16)) +
+#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
+#  theme_bw()
+
+#png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_EPA-ALA.png",width = 4, height = 3, units = "in", res = 500)
+#fasecchi_MEMO_oneseason_onevalue_20p5_18p3
+#dev.off()
+
+#EPA:SDA VS SECCHI - MM suggested but then said not to use, retaining for now
+#fasecchi_MEMO_oneseason_onevalue_20p5_18p4<-ggplot(fa_secchi, aes(x=mean_secnview, y=(c20.5w3_perc_avg/(c18.4w3_perc_avg)))) +
+#  geom_point(size=3, aes(shape = season , colour= lakeid)) +
+#  ylab("EPA/SDA Ratio") +
+#  xlab("Secchi Depth (m)") +
+#  scale_shape_manual(name = "Season", values=c(0,16)) +
+#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
+#  theme_bw()
+
+#png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_EPA-SDA.png",width = 4, height = 3, units = "in", res = 500)
+#fasecchi_MEMO_oneseason_onevalue_20p5_18p4
+#dev.off()
 

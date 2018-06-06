@@ -63,6 +63,44 @@ mp <- ggplot(data = study_subset, aes(x = stationlong, y = stationlat))  +   map
 #Add GLWD lakes to world map
 mp <- mp + geom_polygon(aes(x=long, y=lat, group=group), fill='lightblue1',color='gray55', data=lakes)
 
+#Detour to plot a restricted map for pres:
+
+
+######restricted data set for only one point per map region
+#Remove extra Saskatchewan
+study_subset_restrict <- study_subset[-which(study_subset$lakename %in% c("Blackstrap Reservoir","Broderick Reservoir",
+                                                                          "St. Denis Pond 1","St. Denis Pond 90",
+                                                                          "St. Denis Pond S5338")),]
+#Remove extra Ontario
+study_subset_restrict <- study_subset_restrict[-which(study_subset_restrict$lakename %in% c("Lake 227")),]
+
+#Remove extra Madison 
+study_subset_restrict <- study_subset_restrict[-which(study_subset_restrict$lakename %in% c("Lake Monona")),]
+
+#Remove extra Europe
+study_subset_restrict <- study_subset_restrict[-which(study_subset_restrict$lakename %in% c("Lake Valkea-Kotinen")),]
+
+mp_restrict <- mp + geom_point(data = study_subset_restrict, aes(x = stationlong, y = stationlat),
+                               shape = 21, color="black", fill = "yellow", stroke = 1.5, size = 5.5)
+
+#Make oceans blue
+mp_restrict <- mp_restrict + ylab("") + xlab("") + theme(panel.background = element_rect(fill = 'lightblue1', colour = 'lightblue1'))
+
+#Create one map for North America and one for Europe 
+mp_NAm_res <-  mp_restrict + coord_equal(xlim = c(-115,-65), ylim = c(35, 60)) 
+
+mp_Eur_res <-  mp_restrict + coord_equal(xlim = c(1,36), ylim = c(40, 65))
+
+combine_map_res <- plot_grid(mp_NAm_res,mp_Eur_res, nrow = 1, align = "h", rel_heights = c(1,1))
+
+x.grob <- textGrob("Longitude", gp = gpar(fontface = "bold", col ="black")) #x axis label
+
+y.grob <- textGrob("Latitude", gp = gpar(fontface = "bold", col = "black"), rot = 90) #y axis label
+
+grid.arrange(combine_map_res, left = y.grob, bottom = x.grob) #arranges map and both axis labels
+
+
+#####Go ahead with normal map
 #Add points for lakes of interest
 mp <- mp +  geom_point(shape = 21, color="black", fill = "yellow", stroke = 1.5, size = 5.5)
 
@@ -75,6 +113,8 @@ mp_NAm <-  mp + coord_equal(xlim = c(-115,-65), ylim = c(35, 60))
 
 mp_Eur <-  mp + coord_equal(xlim = c(1,36), ylim = c(40, 65))
   #mp_Eur
+
+  
 
 #Combine the two maps onto one figure
 combine_map <- plot_grid(mp_NAm,mp_Eur, nrow = 1, align = "h", rel_heights = c(1,1))

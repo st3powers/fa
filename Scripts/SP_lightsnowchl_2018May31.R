@@ -338,7 +338,7 @@ lightchla_BM<-ggplot(subset(snowicechllight.shallow,snowicechllight.shallow$lake
   ylab("Chlorophyll a")+
   xlab("PAR (uM per m2 per sec)")+
   theme_bw()#+
-#  facet_wrap(~lakeid,scales = "free")
+#  facet_wrap(~lakeid,scales = "free")#
 
 
 #snowicechllight.shallow<-subset(snowicechllight.aggdepthgroups,snowicechllight.aggdepthgroups$depthgroup=="0-2")
