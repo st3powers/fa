@@ -8,6 +8,7 @@ library(lubridate)
 
 #=============================================================================
 # ----> read in secchi data
+#North Temperate Lakes LTER: Secchi Disk Depth; Other Auxiliary Base Crew Sample Data 1981 - current
 
 secchi_orig <- read.csv("../Data/ntl31_v4.csv", stringsAsFactors = FALSE)
 
@@ -54,7 +55,7 @@ seasons_lakes <- seasons_wisc %>%
   select(season, lakeid, year, startdate, enddate)
 
 #=============================================================================
-# ----> tag secchi data with season
+# ----> tag secchi data with season (NTLER data)
 
 secchi_dates_only <- secchi %>% 
   select(lakeid, year, date) %>% 
@@ -175,6 +176,7 @@ ggplot(fa_secchi, aes(mean_secnview, (MUFA_perc_avg + PUFA_perc_avg), label = wi
 
 #=============================================================================
 # ----> read in snow/ice
+#North Temperate Lakes LTER: Snow and Ice Depth 1982 - current
 
 icesnow_orig<-read.csv("../Data/ntl34_v5.csv", stringsAsFactors = FALSE)
 
@@ -191,6 +193,7 @@ icesnow<-icesnow_orig %>% select(lakeid,year=year4,sampledate,sta,avsnow,sdsnow,
 
 #=============================================================================
 # ----> read in light
+#North Temperate Lakes LTER: Physical Limnology of Primary Study Lakes 1981 - current
 
 light_orig<-read.csv("../Data/ntl29_v5.csv", stringsAsFactors = FALSE)
 light<-light_orig %>% select(lakeid,year=year4,sampledate,sta,depth,light)
@@ -211,8 +214,11 @@ light<-light %>% select(-depth)
 #=============================================================================
 # ----> read in chl
 
+#North Temperate Lakes LTER: Chlorophyll - Trout Lake Area 1981 - current
 chl_north_orig<-read.csv("../Data/ntl35_v2.csv", stringsAsFactors = FALSE)
+#North Temperate Lakes LTER: Chlorophyll - Madison Lakes Area 1995 - current
 chl_south_orig<-read.csv("../Data/ntl38_v3.csv", stringsAsFactors = FALSE)
+
 chlr_north<-chl_north_orig %>% select(lakeid,year=year4,sampledate,depth,chl=chlor,phaeo)
 chlr_south<-chl_south_orig %>% select(lakeid,year=year4,sampledate,depth=depth_range_m,chl=tri_chl_spec,phaeo=phaeo_spec)
 chlr<-rbind(chlr_north,chlr_south)
