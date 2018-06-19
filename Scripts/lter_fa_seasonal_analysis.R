@@ -27,6 +27,8 @@
 # 12) weight FA data by biomass dry weight / total biomass 
 #     (genus-level FA, independent of biomass)
 # 13) aggregated weighted to community level 
+# 14) plotted MUFA/PUFA/SAFA by Lake & Season; plotted Omega3:6 by Lake & Season
+# 15) read in FA Secchi data and plot PUFA/SAFA ~ Secchi
 
 
 
@@ -591,6 +593,7 @@ write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_se
 ## ========= END OF DATA WRANGLING - ANALYSIS BEGINS ========== ##
 # ============================================================== #
 
+#Note ~ 150 lines of code removed starting here compared with version in LTER_FA_20180217.R
 
 # LTER_Madison_weighted_year_season_FA<-read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv") #this appears to be the same as full_dat_weighted_yr_season_FA
 
