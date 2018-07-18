@@ -19,9 +19,8 @@
 # 
 # basically, more on euli lakes (difference, trophic, maybe secchi)
 
-#=========================================================#
-## ================= GETTING STARTED =================== ##
-#=========================================================#
+
+# GETTING STARTED ---------------------------------------------------------
 
 #libraries
 library(dplyr)
@@ -31,13 +30,13 @@ library(ggplot2)
 
 # ----> read in data
 
-dat <- read.csv("../Data/EULI_lake_seasonal_community_FAs.csv", stringsAsFactors = FALSE)
+dat <- read.csv("../Data/EULI_lake_seasonal_community_FAs.csv", 
+                stringsAsFactors = FALSE)
 
 head(dat)
 
-#=========================================================#
-## ================ SEASONAL DIFFERENCES =============== ##
-#=========================================================#
+
+# SEASONAL DIFFERENCES ----------------------------------------------------
 
 # ----> find seasonal differences
 
@@ -170,9 +169,8 @@ t.test(dat_mufa$summer_winter_diff, mu=0, alternative = "two.sided")
 
 
 
-#=========================================================#
-## =================== TROPHIC STATE =================== ##
-#=========================================================#
+# TROPHIC STATE -----------------------------------------------------------
+
 
 euli_full <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 

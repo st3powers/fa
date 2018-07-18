@@ -45,8 +45,10 @@ library(vegan)
 library(RColorBrewer)
 library(ggplot2)
 
-# ============================================================================
-# ----> read in LTER phyto data
+
+
+# read in LTER phyto data -------------------------------------------------
+
 
 #read in, format dates so can stack ok 
 
@@ -65,8 +67,9 @@ lter_lakes <- lter_lakes %>%
   select(lakeid, year, month, date, sta, depth_range,
          division, genus, taxa_name, biomass_conc)
 
-#=============================================================================
-# ----> read in under ice data, for ice on/off timing
+
+# read in under ice data, for ice on/off timing ---------------------------
+
 seasons_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
 #keep only wisconsin, cols of interest, make start and end full dates
@@ -95,8 +98,10 @@ seasons_lakes <- seasons_wisc %>%
 # Note: we are losing the 2014/2015/2016 data by using this to subset
 # we may want to go back to raw LTER ice data to get 2014/2015/2016 iceon/iceoff dates
 
-#=============================================================================
-# ----> LTER ice duration data (for seasons)
+
+
+# LTER ice duration data (for seasons) ------------------------------------
+
 
 #this gets the ice, but we don't have the summer stratified period
 #(which is problematic...)
@@ -116,8 +121,10 @@ duration_relevant <- duration %>%
 
 #not sure what to do about this
 
-#=============================================================================
-# ----> tag data with season
+
+
+# tag data with season ----------------------------------------------------
+
 
 lter_dates_only <- lter_lakes %>%
   select(lakeid, year, date) %>%
@@ -153,8 +160,11 @@ lter_seasons <- lter_seasons_pre %>%
   merge(lter_lakes, by = c("lakeid", "date")) %>%
   select(-year)
 
-#=============================================================================
-# ----> aggregate samples to month
+
+
+
+# aggregate samples to month ----------------------------------------------
+
 
 #aggregate to month within *winter* year and lake (ignore station and depth for now)
 #since ignoring "other" seasons, shouldn't have issue of sample dates across seasons
@@ -175,8 +185,9 @@ lter_month <- lter_seasons %>%
 #   summarize(n = n_distinct(winter_yr))
 
 
-#========================================================================
-# ----> identify <5% of samples
+
+# identify <5% of samples -------------------------------------------------
+
 
 #identify contributors (genus-level) <5% of any sample any date (within lake)
 #use wet weight (shouldn't matter)
@@ -224,8 +235,9 @@ lter_remove_5 <- merge(lter_high_contrib_genera, lter_low_contrib_genera,
   filter(low_p == "present" & is.na(high_p))
 
 
-#========================================================================
-# ----> LTER after removals of low contributors
+
+# LTER after removals of low contributors ---------------------------------
+
 
 #by lake/date - total genus biomass AFTER remove low contribs
 lter_after_remove <- lter_month %>%
@@ -237,8 +249,9 @@ lter_use <- lter_after_remove %>%
   mutate(biomass_dw = 0.20 * biomass_ww_m)
 
 
-#========================================================================
-# ----> read in fatty acid profiles
+
+# read in fatty acid profiles ---------------------------------------------
+
 
 # read in PLoS fatty acid dataset
 fa <- read.csv("../Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE)
@@ -258,8 +271,10 @@ fa_fresh_prop_small <- fa_fresh_prop %>%
          c18.4w3, c18.5w3,
          c20.4w6, c20.5w3, c22.6w3)
 
-#========================================================================
-# ----> fix FA/LTER group/division matches
+
+
+# fix FA/LTER group/division matches --------------------------------------
+
 
 #existing matches: Chlorophyta, Cryptophyta, Rhodophyta
 
@@ -296,8 +311,10 @@ fa_fix <- fa_fresh_prop_small %>%
 # #yes, works as it should
 
 
-#========================================================================
-# ----> tag LTER data with whether matching genus/division in FA data
+
+
+# tag LTER data with whether matching genus/division in FA data -----------
+
 
 lter_fa_tag <- lter_use %>%
   #tag at which level it matches
@@ -311,8 +328,10 @@ tags <- lter_fa_tag %>% select(division, genus, cat) %>% unique()
 # unique(lter_use$division) %>% sort()
 
 
-#========================================================================
-# ----> find FA genus and division-level profiles
+
+
+# find FA genus and division-level profiles -------------------------------
+
 
 #within genus, what's the average FA profile
 fa_genus <- fa_fix %>%
@@ -347,8 +366,10 @@ fa_groupdiv <- fa_fix %>%
   as.data.frame()
 
 
-#========================================================================
-# ----> aggregate biomass to GENUS
+
+
+# aggregate biomass to GENUS ----------------------------------------------
+
 # when missing genus, stick with GENUS biomass but sub in DIVISION fatty acid profile
 
 #aggregate biomass to genus
@@ -373,8 +394,11 @@ lter_level_bm_tag <- merge(lter_level_bm, tags, by = c("division", "genus"), all
 # 2 groupdiv 95
 # 3     <NA>  1
 
-#========================================================================
-# ----> merge with FA profiles
+
+
+
+# merge with FA profiles --------------------------------------------------
+
 
 # --> genus level FA - matches genus-level biomass
 # merges GENUS level biomass with GENUS level FA profiles
@@ -465,8 +489,10 @@ tags_fa_NA <- lter_level_bm_tag %>%
 full_dat <- rbind(tags_fa_genus, tags_fa_groupdiv, tags_fa_NA)
 
 
-#========================================================================
-# ----> weight FA profiles by biomass
+
+
+# weight FA profiles by biomass -------------------------------------------
+
 
 # Data == "prop" is FA % of dry weight
 # so it's a fatty acid proportion of dry weight (of genus or division, by cat)
@@ -590,9 +616,13 @@ summary(full_dat_weighted_yr_season_FA)
 #write to csv
 write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
 
+
+
+
 # ============================================================== #
-## ========= END OF DATA WRANGLING - ANALYSIS BEGINS ========== ##
+# END OF DATA WRANGLING - ANALYSIS BEGINS ---------------------------------
 # ============================================================== #
+
 
 #Note ~ 150 lines of code removed starting here compared with version in LTER_FA_20180217.R
 
