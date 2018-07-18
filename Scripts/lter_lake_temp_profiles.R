@@ -19,11 +19,11 @@ dat <- dat_orig %>% select(lakeid, year4, sampledate, depth, wtemp) %>% unique()
 dat_recent <- dat %>% filter(year4 >= 2014)
 
 #check
-dat_recent %>% 
+dat_recent %>%
   select(lakeid, year4) %>%
   unique()
 
-dat_recent <- dat_recent %>% 
+dat_recent <- dat_recent %>%
   mutate(year = year(sampledate))
 
 #plot for each lake and year - all into one PDF
@@ -33,18 +33,18 @@ pdf("../Figures/lake_temperature_profiles.pdf")
 for (i in unique(dat_recent$lakeid)) {
   #only that lake data
   dat_i <- filter(dat_recent, lakeid == i)
-  
+
   for (j in unique(dat_i$year)) {
-    
+
     dat_j <- filter(dat_i, year == j)
-    
+
     #make plot
     plot_j <- ggplot(dat_j, aes(wtemp, depth)) +
       geom_path() +
       scale_y_reverse() +
       facet_wrap(~sampledate) +
       ggtitle(paste(i, j, sep = " "))
-    
+
     #print out
     print(plot_j)
   } #close j loop
@@ -60,18 +60,18 @@ pdf("Figures/madison_lakes_temperature_profiles.pdf")
 for (i in unique(dat_mad$lakeid)) {
   #only that lake data
   dat_i <- filter(dat_mad, lakeid == i)
-  
+
   for (j in unique(dat_i$year)) {
-    
+
     dat_j <- filter(dat_i, year == j)
-    
+
     #make plot
     plot_j <- ggplot(dat_j, aes(wtemp, depth)) +
       geom_path() +
       scale_y_reverse() +
       facet_wrap(~sampledate) +
       ggtitle(paste(i, j, sep = " "))
-    
+
     #print out
     print(plot_j)
   } #close j loop
