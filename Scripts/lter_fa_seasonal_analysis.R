@@ -302,7 +302,9 @@ fa_fix <- fa_fresh_prop_small %>%
          #match at genus level
          GroupDiv = ifelse(Genus == "Chromulina", "Haptophyta", GroupDiv),
          #Bacillariophyta is multiple classes
-         GroupDiv = ifelse(Class %in% c("Bacillariophyceae", "Fragilariophyceae", "Coscinodiscophyceae"),
+         GroupDiv = ifelse(Class %in% c("Bacillariophyceae",
+                                        "Fragilariophyceae",
+                                        "Coscinodiscophyceae"),
                            "Bacillariophyta", GroupDiv))
 
 # fa_fix %>% select(Group, GroupDiv) %>% unique()
@@ -501,6 +503,12 @@ full_dat <- rbind(tags_fa_genus, tags_fa_groupdiv, tags_fa_NA)
 # present in the community, irrespective of total biomass?"
 # (i.e. we know there is higher biomass in summer - the Circus Circus buffet)
 # SH: pretty sure that what we want then is:(biomass_dry_weight * sumSAFA)/total dry weight
+
+# MRB Note 8/30/18: Not sure that it's totally clear what's going on with 
+# full_dat_weighted below...It seems to be making percentages (e.g. 47.3%) 
+# as opposed to a proportion (e.g. 0.473). Just make sure that it's doing 
+# what is expected/described.
+
 
 full_dat_weighted <- full_dat %>%
   #find total dry weight biomass for each *sample point*
