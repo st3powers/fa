@@ -355,30 +355,56 @@ snowicechllight.shallow <- subset(snowicechllight.shallow,
                                   snowicechllight.shallow$lakeid %in%
                                     c("AL", "BM", "CB", "CR", "SP", "TB", "TR"))
 
-lightchla_7lakes <- ggplot(snowicechllight.shallow, aes(x = light, y = chl)) +
-  geom_point(size = 0.7, color = "royalblue3") +
-  ylab("Chlorophyll a") +
-  xlab("PAR (uM per m2 per sec)") +
-  facet_wrap(~lakeid, scales = "free") +
-  theme_bw()
-  
+# Which years have light, snow data?
+yr.ls <- snowicechllight.shallow %>%
+  filter(!(is.na(light) | is.na(avsnow))) %>%
+  mutate(year = format(as.Date(sampledate, format="%Y-%m-%d"),"%Y")) %>%
+  select(year) %>% 
+  unique()
 
-lightchla_BM <- ggplot(subset(snowicechllight.shallow,
-                              snowicechllight.shallow$lakeid == "BM"),
-                       aes(x = light, y = chl)) +
-  geom_point(color = "royalblue3") +
-  ylab("Chlorophyll a") +
-  xlab("PAR (uM per m2 per sec)") +
-  theme_bw()#+
-#  facet_wrap(~lakeid,scales = "free")#
+# How many years total?
+nrow(yr.ls)
 
+# How many observations per lake?
+yr.count.ls <- snowicechllight.shallow %>%
+  filter(!(is.na(light) | is.na(avsnow))) %>%
+  count(lakeid) 
+
+max(yr.count.ls$n)
+min(yr.count.ls$n)
+
+# Which years have light, chla data?
+yr.lc <- snowicechllight.shallow %>%
+  filter(!(is.na(light) | is.na(chl))) %>%
+  mutate(year = format(as.Date(sampledate, format="%Y-%m-%d"),"%Y")) %>%
+  select(year) %>% 
+  unique()
+
+# How many years total?
+nrow(yr.lc)
+
+# How many observations per lake?
+yr.count.lc <- snowicechllight.shallow %>%
+  filter(!(is.na(light) | is.na(chl))) %>%
+  count(lakeid) 
+
+max(yr.count.lc$n)
+min(yr.count.lc$n)
+
+
+snowicechllight.shallow2 <- snowicechllight.shallow
+snowicechllight.shallow2$lakeid <- "Every"
+snowicechllight.shallow3 <- rbind(snowicechllight.shallow,snowicechllight.shallow2)
+snowicechllight.shallow3$lakeid <- factor(snowicechllight.shallow3$lakeid,
+                                          levels = c("AL", "BM", "CB", "CR",
+                                                     "SP", "TB", "TR", "Every"))
 
 #snowicechllight.shallow <- subset(snowicechllight.aggdepthgroups,
 #                                  snowicechllight.aggdepthgroups$depthgroup == "0-2")
-lightsnow_7lakes <- ggplot(snowicechllight.shallow, aes(x = avsnow, y = light)) +
+lightsnow_7lakes <- ggplot(snowicechllight.shallow3, aes(x = avsnow, y = light)) +
   geom_point(size = 0.7, color = "royalblue3") +
   xlab("Snow Depth (cm)") +
-  ylab("PAR (uM per m2 per sec)") +
+  ylab(bquote('PAR ('*mu~ 'M ' ~m^-2~s^-1*')')) +
   facet_wrap(~lakeid, scales = "free") +
   theme_bw()
 
@@ -390,6 +416,26 @@ lightsnow_BM <- ggplot(subset(snowicechllight.shallow,
   ylab("PAR (uM per m2 per sec)") +
 #  facet_wrap(~lakeid,scales = "free")+
   theme_bw()
+
+
+
+lightchla_7lakes <- ggplot(snowicechllight.shallow3, aes(x = light, y = chl)) +
+  geom_point(size = 0.7, color = "royalblue3") +
+  ylab("Chlorophyll a") +
+  xlab(bquote('PAR ('*mu~ 'M ' ~m^-2~s^-1*')')) +
+  facet_wrap(~lakeid, scales = "free") +
+  theme_bw()
+
+
+lightchla_BM <- ggplot(subset(snowicechllight.shallow,
+                              snowicechllight.shallow$lakeid == "BM"),
+                       aes(x = light, y = chl)) +
+  geom_point(color = "royalblue3") +
+  ylab("Chlorophyll a") +
+  xlab("PAR (uM per m2 per sec)") +
+  theme_bw()#+
+#  facet_wrap(~lakeid,scales = "free")#
+
 
 png(filename = "../Figures/lightchla_7lakes.png", width = 4, height = 4,
     units = "in", res = 500)
