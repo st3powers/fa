@@ -44,7 +44,9 @@ library(lubridate)
 library(vegan)
 library(RColorBrewer)
 library(ggplot2)
-
+library(ggpubr)
+library(grid)
+library(gridExtra)
 
 
 # read in LTER phyto data -------------------------------------------------
@@ -622,7 +624,7 @@ summary(full_dat_weighted_yr_season_FA)
 #SAFA: 22-47
 
 #write to csv
-write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
+#write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
 
 
 
@@ -642,7 +644,7 @@ write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_se
 View(full_dat_weighted_yr_season_FA)
 
 
-#Figure 3:
+#Figure 3 + 4 (combined):
 
 full_dat_weighted_yr_season_FA_long <- melt(data = full_dat_weighted_yr_season_FA,
                                             measure.vars = c("MUFA_perc_avg",
@@ -657,19 +659,24 @@ full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_F
 
 madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season, y = value)) +
   geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 0.7) +
- # geom_point(aes(color = lakeid)) +
+  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
   facet_wrap(~variable) +
   xlab("Season") + ylab("% of Total FA")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw()
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
 
 
-#png(filename = "../Figures/Madison_FA_plot.png",width = 6, height = 6, units = "in", res = 500)
-png(filename = "../Figures/Madison_FA_plot.png",
-    width = 4, height = 2.5, units = "in", res = 500)
-madison_FA
-dev.off()
+#png(filename = "../Figures/Madison_FA_plot.png",
+#    width = 4, height = 2.5, units = "in", res = 500)
+#madison_FA
+#dev.off()
 
 
 #Figure 4: 
@@ -706,33 +713,62 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
          longchainPUFA_SAFA = longchainPUFA / SAFA_perc_avg,
          omega3_omega6_ratio = total_omega3 / total_omega6) #added by MRB on 6/4/18
 
-#plot
-#madison_omega_ratio_plot_6.3 <- ggplot(omegas_chains, aes(season, omega6_omega3_ratio)) +
-#  geom_boxplot(outlier.shape="") +
-#  geom_jitter(aes(color = lakeid), width = 0.1, size=0.6) +
-#  ylab("Omega 6:Omega 3 Ratio") + xlab("Season") +
-#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
-#  theme_bw()
 
 madison_omega_ratio_plot_3.6 <- ggplot(omegas_chains, aes(season, omega3_omega6_ratio)) +
   geom_boxplot(outlier.shape = "") +
   geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
   ylab("Omega 3:Omega 6 Ratio") + xlab("Season") +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
   theme_bw() +
   theme(axis.title.y = element_text(size = rel(1.5)),
         axis.text = element_text(size = rel(1.5)),
         axis.title.x = element_text(size = rel(1.5)),
         legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5))) #must be used after theme_bw()
+        legend.title = element_text(size = rel(1.5)))
 
 
-#png(filename = "../Figures/madison_omega_ratio_plot3v6.png",width = 6, height = 6, units = "in", res = 500)
-png(filename = "../Figures/madison_omega_ratio_plot_3v6.png", width = 3.75,
-    height = 4, units = "in", res = 500)
-madison_omega_ratio_plot_3.6
+#png(filename = "../Figures/madison_omega_ratio_plot_3v6.png", width = 3.75,
+#    height = 4, units = "in", res = 500)
+#madison_omega_ratio_plot_3.6
+#dev.off()
+
+
+# Combine plots 3 + 4:
+# OPTION 1: Using ggarrange. Simple, but w/o shared x-axis.
+png(filename = "../Figures/madison-fa-omegas-combined.png", width = 9,
+        height = 3.75, units = "in", res = 500)
+ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
+          ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
+          widths = c(2,1))
 dev.off()
 
+
+
+# OPTION 2: Using gridExtra. More complex, but with shared x-axis.
+#https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
+p1 <- madison_FA + xlab(label = "")
+p2 <- madison_omega_ratio_plot_3.6 + xlab(label = "")
+
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(p1)
+
+png(filename = "../Figures/madison-fa-omegas-combined_sharedX.png", width = 9,
+    height = 4, units = "in", res = 500)
+grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
+                               p2 + theme(legend.position="none"),
+                               nrow=1, widths = c(2,1)),
+                   mylegend, nrow=1, widths = c(5,1),
+                   bottom = textGrob("Season", vjust = -1,
+                                     gp = gpar(fontface = "bold", cex = 1.35)))
+dev.off()
 
 ######################
 # fa ~ secchi

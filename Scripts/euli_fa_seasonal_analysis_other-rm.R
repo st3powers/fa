@@ -9,7 +9,8 @@ library(dplyr)
 library(reshape2)
 library(tidyr)
 library(ggplot2)
-
+library(grid)
+library(gridExtra)
 
 # read in ecology under lake ice dataset and FA dataset -------------------
 
@@ -360,14 +361,8 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
             sd__c22.6w3 = sd(perc_c22.6w3, na.rm = TRUE)) %>%
   as.data.frame()
 
-# full_dat_weighted_comm_agg %>%
-#   mutate(total_FA = 
-#            seasonal_avg__MUFA_perc +
-#            seasonal_avg__PUFA_perc +
-#            seasonal_avg__SAFA_perc) %>%
-#   summary()
 
-head(full_dat_weighted_comm_agg)
+head()
 
 write.csv(full_dat_weighted_comm_agg, "../Data/EULI_lake_seasonal_community_FAs.csv", row.names = FALSE)
 
@@ -395,24 +390,101 @@ full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$var
 
 
 
-euli_onelake_oneseason_onevalue <- ggplot(data = full_dat_weighted_comm_ag_long,
-                                        aes(x = season, y = value)) +
+euli_onelake_oneseason_onevalue <- 
+  ggplot(data = full_dat_weighted_comm_ag_long,
+         aes(x = season, y = value)) +
   geom_boxplot(outlier.shape = "") +
-#  geom_point(aes(color = season)) +
-  geom_jitter(aes(color = season), width = 0.1, size = 0.7) +
+  geom_jitter(aes(color = season), width = 0.1, size = 1.5) +
   facet_wrap(~variable) +
   ylab("% of Total FA") +
   xlab("Season") +
-  scale_color_manual(values = c("royalblue3", "green3")) +
+  scale_color_manual(name = "Season", values = c("royalblue3", "green3")) +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
 
 #png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
-#    width = 6, height = 6, units = "in", res = 500)
-png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
-    width = 4, height = 2.5, units = "in", res = 500)
-euli_onelake_oneseason_onevalue
+#    width = 4, height = 2.5, units = "in", res = 500)
+#euli_onelake_oneseason_onevalue
+#dev.off()
+
+full_dat_agg_omegas <- full_dat_weighted_comm_agg %>%
+  #total omega 3 prop of PUFAs
+  mutate(total_omega3 = seasonal_avg__c18.3w3 +
+           seasonal_avg__c18.4w3 +
+           seasonal_avg__c18.5w3 +
+           seasonal_avg__c20.5w3 +
+           seasonal_avg__c22.6w3,
+         #total omega 6 prop of PUFAs
+         total_omega6 = seasonal_avg__c18.2w6 +
+           seasonal_avg__c18.3w6 +
+           seasonal_avg__c20.4w6,
+         #total short chain PUFAs (<20 C)
+         total_short_chain = seasonal_avg__c18.2w6 +
+           seasonal_avg__c18.3w6 +
+           seasonal_avg__c18.3w3 +
+           seasonal_avg__c18.4w3 +
+           seasonal_avg__c18.5w3,
+         #total long chain PUFAs (AG defined as >= 20 C)
+         total_long_chain = seasonal_avg__c20.4w6 +
+           seasonal_avg__c20.5w3 +
+           seasonal_avg__c22.6w3) %>%
+  mutate(omega6_omega3_ratio = total_omega6 / total_omega3,
+         #may want just long chain PUFA down the road (%)
+         longchainPUFA = (total_long_chain * seasonal_avg__PUFA_perc) / 100,
+         #total long chain is % of PUFAs that are long chain
+         #divide by PUFAs prop to get ratio with SAFA
+         #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
+         longchainPUFA_SAFA = longchainPUFA / seasonal_avg__SAFA_perc,
+         omega3_omega6_ratio = total_omega3 / total_omega6) 
+
+
+euli_omega_ratio_plot_3.6 <- ggplot(full_dat_agg_omegas, aes(season, omega3_omega6_ratio)) +
+  geom_boxplot(outlier.shape = "") +
+  geom_jitter(aes(color = season), width = 0.1, size = 1.5) +
+  ylab("Omega 3:Omega 6 Ratio") + xlab("Season") +
+  scale_color_manual(name = "Season", values = c("royalblue3", "green3")) +
+  #                   breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)))
+
+
+#png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
+#    width = 4, height = 2.5, units = "in", res = 500)
+#euli_onelake_oneseason_onevalue
+#dev.off()
+#https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
+p1 <- euli_onelake_oneseason_onevalue + xlab(label = "")
+p2 <- euli_omega_ratio_plot_3.6 + xlab(label = "")
+
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(p1)
+
+png(filename = "../Figures/euli-fa-omegas-combined_sharedX.png", width = 9,
+    height = 4, units = "in", res = 500)
+grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
+                         p2 + theme(legend.position="none"),
+                         nrow=1, widths = c(2,1)),
+             mylegend, nrow=1, widths = c(5,1),
+             bottom = textGrob("Season", vjust = -1,
+                               gp = gpar(fontface = "bold", cex = 1.35)))
 dev.off()
+
 
 ###########################
 
