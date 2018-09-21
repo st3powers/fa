@@ -778,24 +778,76 @@ fa_secchi$winter_yr2 <- substr(fa_secchi$winter_yr, 3, 4)
 fa_secchi$winter_yr2[which(fa_secchi$season == "iceoff")] <- ""
 fa_secchi$fill <- "Y"
 fa_secchi$fill[which(fa_secchi$season == "iceoff")] <- "N"
+
+fa_secchi$omega3<-fa_secchi$c18.3w3_perc_avg + fa_secchi$c18.4w3_perc_avg +
+  fa_secchi$c18.5w3_perc_avg + fa_secchi$c20.5w3_perc_avg +
+  fa_secchi$c22.6w3_perc_avg
+
+fa_secchi$omega6 = fa_secchi$c18.2w6_perc_avg + fa_secchi$c18.3w6_perc_avg + 
+  fa_secchi$c20.4w6_perc_avg
+fa_secchi$omega6omega3ratio<-fa_secchi$omega6/fa_secchi$omega3
+fa_secchi$omega3omega6ratio<-fa_secchi$omega3/fa_secchi$omega6
+
+
+
 #fa_secchi$shape<-24
 #fa_secchi$shape[which(fa_secchi$season=="iceoff")]<-20
 
 #seasonal patterns
 
 #PUFA/SAFA vs SECCHI
-fasecchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (PUFA_perc_avg / SAFA_perc_avg))) +
+pufasafa_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (PUFA_perc_avg / SAFA_perc_avg))) +
   geom_point(size=3, aes(shape = season , colour = lakeid)) +
-  ylab("PUFA/SAFA Ratio") +
+  ylab("PUFA/SAFA ratio") +
   xlab("Secchi Depth (m)") +
   scale_shape_manual(name = "Season", values = c(0, 16)) +
   scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
   theme_bw()
 
-png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_PUFA-SAFA.png",
+pufa_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (PUFA_perc_avg))) +
+  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+  ylab("PUFA (% of total FA)") +
+  xlab("Secchi Depth (m)") +
+  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
+  theme_bw()
+
+omega63ratio_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (omega6omega3ratio))) +
+  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+  ylab("omega 6:3 ratio") +
+  xlab("Secchi Depth (m)") +
+  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
+  theme_bw()
+
+omega36ratio_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (omega3omega6ratio))) +
+  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+  ylab("omega 3:6 ratio") +
+  xlab("Secchi Depth (m)") +
+  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
+  theme_bw()
+
+png(filename = "../Figures/pufa_secchi_MEMO_oneseason_onevalue.png",
     width = 4, height = 3, units = "in", res = 500)
-fasecchi_MEMO_oneseason_onevalue
+pufa_secchi_MEMO_oneseason_onevalue
 dev.off()
+
+png(filename = "../Figures/pufasafa_secchi_MEMO_oneseason_onevalue.png",
+    width = 4, height = 3, units = "in", res = 500)
+pufasafa_secchi_MEMO_oneseason_onevalue
+dev.off()
+
+png(filename = "../Figures/omega6_omega3_ratio_MEMO_oneseason_onevalue.png",
+    width = 4, height = 3, units = "in", res = 500)
+omega63ratio_secchi_MEMO_oneseason_onevalue
+dev.off()
+
+png(filename = "../Figures/omega3_omega6_ratio_MEMO_oneseason_onevalue.png",
+    width = 4, height = 3, units = "in", res = 500)
+omega36ratio_secchi_MEMO_oneseason_onevalue
+dev.off()
+
 
 #EPA:ALA VS SECCHI - MM suggested but then said not to use, retaining for now
 #fasecchi_MEMO_oneseason_onevalue_20p5_18p3<-ggplot(fa_secchi, aes(x=mean_secnview, y=(c20.5w3_perc_avg/(c18.3w3_perc_avg)))) +
