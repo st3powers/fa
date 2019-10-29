@@ -184,11 +184,11 @@ phyto_long_no_other <- phyto_long_no_other %>%
 # wrangle FA data ---------------------------------------------------------
 
 fa <- fa_orig %>%
-  #only fresh water
+  # only fresh water
   filter(Salinity == 0) %>%
-  #only proportional data
+  # only proportional data
   filter(Data == "prop") %>%
-  #for now, don't care about experimental info
+  # for now, don't care about experimental info
   select(Group, Class, Order, Genus, species,
          sumSAFA, sumMUFA, sumPUFA,
          c18.2w6, c18.3w6, c18.3w3,
@@ -196,11 +196,12 @@ fa <- fa_orig %>%
          c20.4w6, c20.5w3, c22.6w3)
 
 unique(fa$Group)
-# "Cyanobacteria" "Chlorophyta"   "Ochrophyta"    "Cryptophyta"   "Dinophyta"     "Euglenozoa"    "Rhodophyta"  
+# "Cyanobacteria" "Chlorophyta"   "Ochrophyta"    "Cryptophyta"   "Dinophyta"
+# "Euglenozoa"    "Rhodophyta"  
 
-#crosswalk to match euli to FA
+# crosswalk to match euli to FA
 fa_equiv <- fa %>%
-  #crypto, chloro, cyano are direct matches
+  # crypto, chloro, cyano are direct matches
   mutate(fa_group = ifelse(Group == "Cryptophyta", "crypto", NA),
          fa_group = ifelse(Group == "Chlorophyta", "chloro", fa_group),
          fa_group = ifelse(Group == "Cyanobacteria", "cyano", fa_group),

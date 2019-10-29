@@ -69,6 +69,19 @@ lter_lakes <- lter_lakes %>%
   select(lakeid, year, month, date, sta, depth_range,
          division, genus, taxa_name, biomass_conc)
 
+# NOTE, from LTER:
+# "Biovolume concentrations are then computed by mulitplying the average cell
+# biovolume by the cell densities in the water sample. Note that one million
+# cubicMicrometers of biovolume PerMilliliter of water are equal to a biovolume
+# concentration of one cubicMillimeterPerMilliliter. Assuming a cell density
+# equal to water, a cubicMillimeterPerMilliliter of biovolume converts to a
+# biomass concentration of one milligramPerLiter."
+# https://lter.limnology.wisc.edu/dataset/north-temperate-lakes-lter-phytoplankton-madison-lakes-area-1995-current
+
+# SP: When we assume density of 1g/mL for phyto cells then we get units of mg/L
+# according to the LTER metadata. Then multiplying by (0.2 mg dry)/(1 mg wet) we
+# end up with mg/L dry weight.
+
 
 # read in under ice data, for ice on/off timing ---------------------------
 

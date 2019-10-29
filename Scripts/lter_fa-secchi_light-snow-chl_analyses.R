@@ -210,13 +210,13 @@ light <- light_orig %>%
 
 # play with depth groups?
 light$depthgroup <- light$depth
-light$depthgroup[which(light$depth  <= 2)] <- "0-2"
-light$depthgroup[which(light$depth > 2 & light$depth <= 5)]<-"2-5"
-light$depthgroup[which(light$depth > 5 & light$depth <= 10)]<-"5-10"
-light$depthgroup[which(light$depth > 10 & light$depth <= 15)]<-"10-15"
+light$depthgroup[which(light$depth  <= 3)] <- "0-3"
+light$depthgroup[which(light$depth > 3 & light$depth <= 6)]<-"3-6"
+light$depthgroup[which(light$depth > 6 & light$depth <= 12)]<-"6-12"
+light$depthgroup[which(light$depth > 12 & light$depth <= 15)]<-"12-15"
 light$depthgroup[which(light$depth > 15 & light$depth <= 20)]<-"15-20"
 light$depthgroup[which(light$depth > 20)] <- "20-99"
-light$depthgroup[which(light$depth == "0-1")] <- "0-2"
+light$depthgroup[which(light$depth == "0-1")] <- "0-3"
 light$depthgroup[which(light$depth == "0-8")] <- "0-8"
 
 light <- light %>% select(-depth)
@@ -250,10 +250,10 @@ snowicechl$sampledate <- as.Date(snowicechl$sampledate, format = "%m/%d/%Y")
 snowicechl$depthgroup <- snowicechl$depth
 
 # play with depth groups?
-snowicechl$depthgroup[which(as.numeric(snowicechl$depth) <= 2)] <- "0-2"
-snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 2 & as.numeric(snowicechl$depth) <= 5)] <- "2-5"
-snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 5 & as.numeric(snowicechl$depth) <= 10)] <- "5-10"
-snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 10 & as.numeric(snowicechl$depth) <= 15)] <- "10-15"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) <= 3)] <- "0-3"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 3 & as.numeric(snowicechl$depth) <= 6)] <- "3-6"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 6 & as.numeric(snowicechl$depth) <= 12)] <- "6-12"
+snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 12 & as.numeric(snowicechl$depth) <= 15)] <- "12-15"
 snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 15 & as.numeric(snowicechl$depth) <= 20)] <- "15-20"
 snowicechl$depthgroup[which(as.numeric(snowicechl$depth) > 20)] <- "20-99"
 #snowicechl$depthgroup[which(snowicechl$depth =="0-1")]<-"0-2"
@@ -350,7 +350,7 @@ ggplot(dataplot, aes(x = avsnow, y = light, color = sdsnow)) +
 
 
 snowicechllight.shallow <- subset(snowicechllight.aggdepthgroups,
-                                  snowicechllight.aggdepthgroups$depthgroup == "0-2")
+                                  snowicechllight.aggdepthgroups$depthgroup == "0-3")
 snowicechllight.shallow <- subset(snowicechllight.shallow,
                                   snowicechllight.shallow$lakeid %in%
                                     c("AL", "BM", "CB", "CR", "SP", "TB", "TR"))
@@ -400,7 +400,7 @@ snowicechllight.shallow3$lakeid <- factor(snowicechllight.shallow3$lakeid,
                                                      "SP", "TB", "TR", "Every"))
 
 #snowicechllight.shallow <- subset(snowicechllight.aggdepthgroups,
-#                                  snowicechllight.aggdepthgroups$depthgroup == "0-2")
+#                                  snowicechllight.aggdepthgroups$depthgroup == "0-3")
 lightsnow_7lakes <- ggplot(snowicechllight.shallow3, aes(x = avsnow, y = light)) +
   geom_point(size = 0.7, color = "royalblue3") +
   xlab("Snow Depth (cm)") +
