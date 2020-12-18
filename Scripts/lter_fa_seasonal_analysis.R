@@ -719,7 +719,10 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
            c22.6w3_perc_avg) %>%
   mutate(omega6_omega3_ratio = total_omega6 / total_omega3,
          #may want just long chain PUFA down the road (%)
+         
+         # Is this line of code correct? 
          longchainPUFA = (total_long_chain * PUFA_perc_avg) / 100,
+         
          #total long chain is % of PUFAs that are long chain
          #divide by PUFAs prop to get ratio with SAFA
          #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
@@ -782,6 +785,83 @@ grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
              bottom = textGrob("Season", vjust = -1,
                                gp = gpar(fontface = "bold", cex = 1.35)))
 dev.off()
+
+# Long chain/short chain
+long_chain_season <- ggplot(data = omegas_chains,
+                            aes(x = season, y = total_long_chain)) +
+  geom_boxplot(outlier.shape = "") +
+  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
+  xlab("") +
+  ylab("% Long Chain PUFA")  +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
+
+short_chain_season <- ggplot(data = omegas_chains,
+                             aes(x = season, y = total_short_chain)) +
+  geom_boxplot(outlier.shape = "") +
+  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
+  xlab("") +
+  ylab("% Short Chain PUFA")  +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
+
+
+# EPA c20.5w3_perc_avg
+EPA_chain_season <- ggplot(data = omegas_chains,
+                           aes(x = season, y = c20.5w3_perc_avg)) +
+  geom_boxplot(outlier.shape = "") +
+  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
+  xlab("") +
+  ylab("% EPA (c20.5w3)")  +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
+
+# DHA c22.6w3_perc_avg
+DHA_chain_season <- ggplot(data = omegas_chains,
+                           aes(x = season, y = c22.6w3_perc_avg)) +
+  geom_boxplot(outlier.shape = "") +
+  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
+  xlab("") +
+  ylab("% DHA (c22.6w3)")  +
+  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
+                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
+
+pufa_breakdown <- ggarrange(long_chain_season, short_chain_season,
+                            EPA_chain_season, DHA_chain_season,
+                            common.legend = TRUE, legend = "right") %>%
+  annotate_figure(bottom = text_grob("Season", size = 18))
+
+ggsave(filename = "../Figures/pufa_breakdown_seasonal_MEMO.png",
+       plot = pufa_breakdown, device = "png", width = 10, height = 8)
+
 
 ######################
 # fa ~ secchi
