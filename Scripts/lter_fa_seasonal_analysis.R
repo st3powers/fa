@@ -161,7 +161,7 @@ seasons_lakes_wide <- seasons_lakes %>%
 #(looking at ice vs stratified patterns in FA)
 
 lter_seasons_pre <- merge(lter_dates_only, seasons_lakes_wide,
-                      by = c("lakeid"), all.x = TRUE) %>%
+                          by = c("lakeid"), all.x = TRUE) %>%
   #tag seasons with iceon/iceoff (NA if not fall within start/end dates)
   mutate(season = ifelse(date >= iceon_startdate & date <= iceon_enddate, "iceon", NA),
          season = ifelse(date >= iceoff_startdate & date <= iceoff_enddate, "iceoff", season)) %>%
@@ -393,7 +393,7 @@ fa_groupdiv <- fa_fix %>%
 lter_level_bm <- lter_use %>%
   group_by(lakeid, winter_yr, season, month, division, genus) %>%
   summarize(bm_ww_g = sum(biomass_ww_m, na.rm = TRUE),
-         bm_drw_g = sum(biomass_dw, na.rm = TRUE)) %>%
+            bm_drw_g = sum(biomass_dw, na.rm = TRUE)) %>%
   as.data.frame()
 
 #merge with tag info
@@ -750,7 +750,7 @@ madison_omega_ratio_plot_3.6 <- ggplot(omegas_chains, aes(season, omega3_omega6_
 # Combine plots 3 + 4:
 # OPTION 1: Using ggarrange. Simple, but w/o shared x-axis.
 png(filename = "../Figures/madison-fa-omegas-combined.png", width = 9,
-        height = 3.75, units = "in", res = 500)
+    height = 3.75, units = "in", res = 500)
 ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
           ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
           widths = c(2,1))
@@ -776,11 +776,11 @@ mylegend<-g_legend(p1)
 png(filename = "../Figures/madison-fa-omegas-combined_sharedX.png", width = 9,
     height = 4, units = "in", res = 500)
 grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
-                               p2 + theme(legend.position="none"),
-                               nrow=1, widths = c(2,1)),
-                   mylegend, nrow=1, widths = c(5,1),
-                   bottom = textGrob("Season", vjust = -1,
-                                     gp = gpar(fontface = "bold", cex = 1.35)))
+                         p2 + theme(legend.position="none"),
+                         nrow=1, widths = c(2,1)),
+             mylegend, nrow=1, widths = c(5,1),
+             bottom = textGrob("Season", vjust = -1,
+                               gp = gpar(fontface = "bold", cex = 1.35)))
 dev.off()
 
 ######################
@@ -809,57 +809,109 @@ fa_secchi$omega3omega6ratio<-fa_secchi$omega3/fa_secchi$omega6
 #seasonal patterns
 
 #PUFA/SAFA vs SECCHI
-pufasafa_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (PUFA_perc_avg / SAFA_perc_avg))) +
-  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+pufasafa_secchi_MEMO_oneseason_onevalue <- ggplot(
+  data = filter(fa_secchi, season == "iceon"),
+  aes(x = mean_secnview,
+      y = (PUFA_perc_avg / SAFA_perc_avg))) +
+  geom_point(size=3, aes(
+    # shape = season,
+    colour = lakeid)) +
   ylab("PUFA/SAFA ratio") +
-  xlab("Secchi Depth (m)") +
-  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  xlab("") +
+  # scale_shape_manual(name = "Season", values = c(0, 16)) +
   scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text = element_text(size = 11),
+        axis.title = element_text(size = 14),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 13))
 
-pufa_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (PUFA_perc_avg))) +
-  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+pufa_secchi_MEMO_oneseason_onevalue <- ggplot(
+  data = filter(fa_secchi, season == "iceon"),
+  
+  aes(x = mean_secnview,
+      y = (PUFA_perc_avg))) +
+  geom_point(size=3, aes(
+    # shape = season,
+    colour = lakeid)) +
   ylab("PUFA (% of total FA)") +
-  xlab("Secchi Depth (m)") +
-  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  xlab("") +
+  # scale_shape_manual(name = "Season", values = c(0, 16)) +
   scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text = element_text(size = 11),
+        axis.title = element_text(size = 14),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 13))
 
-omega63ratio_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (omega6omega3ratio))) +
-  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+omega63ratio_secchi_MEMO_oneseason_onevalue <- ggplot(
+  data = filter(fa_secchi, season == "iceon"),
+  aes(x = mean_secnview,
+      y = (omega6omega3ratio))) +
+  geom_point(size=3, aes(
+    #shape = season ,
+    colour = lakeid)) +
   ylab("omega 6:3 ratio") +
-  xlab("Secchi Depth (m)") +
-  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  xlab("") +
+  # scale_shape_manual(name = "Season", values = c(0, 16)) +
   scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text = element_text(size = 11),
+        axis.title = element_text(size = 14),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 13))
 
-omega36ratio_secchi_MEMO_oneseason_onevalue<-ggplot(fa_secchi, aes(x = mean_secnview, y = (omega3omega6ratio))) +
-  geom_point(size=3, aes(shape = season , colour = lakeid)) +
+omega36ratio_secchi_MEMO_oneseason_onevalue <- ggplot(
+  data = filter(fa_secchi, season == "iceon"),
+  aes(x = mean_secnview,
+      y = (omega3omega6ratio))) +
+  geom_point(size=3, aes(
+    # shape = season,
+    colour = lakeid)) +
   ylab("omega 3:6 ratio") +
-  xlab("Secchi Depth (m)") +
-  scale_shape_manual(name = "Season", values = c(0, 16)) +
+  xlab("") +
+  # scale_shape_manual(name = "Season", values = c(0, 16)) +
   scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text = element_text(size = 11),
+        axis.title = element_text(size = 14),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 13))
 
-png(filename = "../Figures/pufa_secchi_MEMO_oneseason_onevalue.png",
-    width = 4, height = 3, units = "in", res = 500)
-pufa_secchi_MEMO_oneseason_onevalue
-dev.off()
+fig_grid <- ggarrange(plotlist = list(pufa_secchi_MEMO_oneseason_onevalue,
+                                      pufasafa_secchi_MEMO_oneseason_onevalue,
+                                      omega63ratio_secchi_MEMO_oneseason_onevalue,
+                                      omega36ratio_secchi_MEMO_oneseason_onevalue),
+                      common.legend = TRUE, legend = "right") %>%
+  annotate_figure(bottom = text_grob("Secchi Depth (m)", size = 14))
 
-png(filename = "../Figures/pufasafa_secchi_MEMO_oneseason_onevalue.png",
-    width = 4, height = 3, units = "in", res = 500)
-pufasafa_secchi_MEMO_oneseason_onevalue
-dev.off()
+ggsave(filename = "../Figures/fa_vs_secchi_grid.png", plot = fig_grid,
+       width = 8.25, height = 7.5, units = "in", device = "png")
 
-png(filename = "../Figures/omega6_omega3_ratio_MEMO_oneseason_onevalue.png",
-    width = 4, height = 3, units = "in", res = 500)
-omega63ratio_secchi_MEMO_oneseason_onevalue
-dev.off()
 
-png(filename = "../Figures/omega3_omega6_ratio_MEMO_oneseason_onevalue.png",
-    width = 4, height = 3, units = "in", res = 500)
-omega36ratio_secchi_MEMO_oneseason_onevalue
-dev.off()
+# If saving individual figures:
+
+# png(filename = "../Figures/pufa_secchi_MEMO_oneseason_onevalue.png",
+#     width = 4, height = 3, units = "in", res = 500)
+# pufa_secchi_MEMO_oneseason_onevalue
+# dev.off()
+# 
+# png(filename = "../Figures/pufasafa_secchi_MEMO_oneseason_onevalue.png",
+#     width = 4, height = 3, units = "in", res = 500)
+# pufasafa_secchi_MEMO_oneseason_onevalue
+# dev.off()
+# 
+# png(filename = "../Figures/omega6_omega3_ratio_MEMO_oneseason_onevalue.png",
+#     width = 4, height = 3, units = "in", res = 500)
+# omega63ratio_secchi_MEMO_oneseason_onevalue
+# dev.off()
+# 
+# png(filename = "../Figures/omega3_omega6_ratio_MEMO_oneseason_onevalue.png",
+#     width = 4, height = 3, units = "in", res = 500)
+# omega36ratio_secchi_MEMO_oneseason_onevalue
+# dev.off()
+
+
 
 
 #EPA:ALA VS SECCHI - MM suggested but then said not to use, retaining for now
