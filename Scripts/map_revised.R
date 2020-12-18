@@ -1,32 +1,20 @@
 # This script is used to make a map of all lakes used in the 
-# data from Stephanie Hampton's 2018 ALSO presentation. 
+# data from Stephanie Hampton's 2018 ASLO presentation. 
 
-
-######### Load packages ############
-library(grid)
+# Load packages -----------------------------------------------------------
 library(ggplot2)
-library(gridExtra)
 library(dplyr)
-library(reshape2)
-library(RColorBrewer)
 library(tidyr)
-library(ggmap)
 library(rgdal)
-library(raster)
-library(cowplot)
-library(maps)
-library(maptools)
 library(ggplot2)
-library(grid)
-# http://egallic.fr/scale-bar-and-north-arrow-on-a-ggplot2-map/
-# devtools::install_github("3wen/legendMap")
-library(legendMap)
+library(ggpubr)
+library(broom)
+library(viridisLite)
+library(ggrepel)
 
 
+# Read, wrangle data ------------------------------------------------------
 
-##############################################################
-##                      Read, wrangle data                  ##
-##############################################################
 # Read in aggregated fatty acid (FA) data, created by 'euli_fa_seasonal_analysis_other-rm.R' script
 full_dat_weighted_comm_agg <- read.csv("../Data/EULI_lake_seasonal_community_FAs.csv")
 
@@ -36,70 +24,137 @@ study_names <- unique(full_dat_weighted_comm_agg$lakename)
 # Bring in original EULI data to get lake lat/lons 
 euli_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
-# Pull data from only relevant lakes
-study_subset <- euli_orig[which(euli_orig$lakename %in% study_names), ]
-study_subset <- study_subset[!duplicated(study_subset$lakename), ] #keep only one row of each lake's data
+# Pull data from only relevant lakes, averaging coordinates if multiple sets
+study_subset <- euli_orig %>%
+  filter(lakename %in% study_names) %>%
+  select(lakename, stationlat, stationlong, lakecountry) %>%
+  group_by(lakename) %>%
+  summarise(stationlat = mean(stationlat),
+            stationlong = mean(stationlong),
+            lakecountry = unique(lakecountry)) %>%
+  unique() %>%
+  mutate(site_source = "EULI")
 
-# Pull in shapefile layer for global lakes and wetlands (GLWD) data
-#lakes <- readOGR(dsn = "../../Ancient-Lakes-Viz", layer = "glwd_1") # Lives outside of FA repo
-# Projection
-#proj4string(lakes) <- CRS("+proj=longlat +datum=WGS84") # MRB change - could use verification
+ntl_sites <- euli_orig %>%
+  # Note, the MS lists Sparkling Bog, too, but not present in EULI. So only
+  # six lakes selected for this fig for now, but will be labeled as 7.
+  filter(lakename %in% c("Trout Lake", "Sparkling Lake",
+                         "Crystal Lake", "Allequash Lake",
+                         "Big Muskellunge Lake", "Trout Bog")) %>%
+  select(lakename, stationlat, stationlong, lakecountry) %>%
+  unique() %>%
+  mutate(site_source = "NTL")
 
-#lakes <- fortify(lakes) # MRB unclear of purpose of this
+# Combine lake location info from two lake groups. Also, average coords where
+# lakes are very close to ea/o and label them as a group for the map
+lake_locations <- bind_rows(study_subset, ntl_sites) %>%
+  mutate(label = case_when(
+    
+    lakename %in% c("St. Denis Pond S5338", "St. Denis Pond 1",
+                    "St. Denis Pond 90", "Blackstrap Reservoir",
+                    "Broderick Reservoir", "Lake Diefenbaker") ~ "6 lakes",
+    lakename %in% c("Lake 227", "Lake 239") ~ "2 lakes_a",
+    lakename %in% c("Lake Mendota", "Lake Monona") ~ "2 lakes_b",
+    lakename %in% c("Lake Valkea-Kotinen", "Lake Vanajanselka") ~ "2 lakes_c",
+    lakename %in% c("Trout Lake", "Crystal Lake", "Sparkling Lake",
+                    "Trout Bog", "Big Muskellunge Lake") ~ "7 lakes",
+    TRUE ~ lakename)) %>%
+  group_by(label) %>%
+  mutate(avg_lat = mean(stationlat),
+         avg_long = mean(stationlong)) %>%
+  ungroup() %>%
+  mutate(label = case_when(
+    
+    grepl(pattern = "_[a-c]", x = label) ~ gsub(pattern = "_[a-c]",
+                                                replacement = "",
+                                                x = label),
+    grepl(pattern = "lakes$", x = label) ~ label,
+    TRUE ~ NA_character_),
+    panel = case_when(
+      # Separate lake labeling schemes for different lake clusters:
+      ((lakecountry %in% c("Canada", "USA")) &
+         (label == "7 lakes")) ~ "North America A",
+      ((lakecountry %in% c("Canada", "USA")) &
+        (label != "7 lakes")) ~ "North America B",
+      lakecountry %in% c("Italy", "Finland", "Germany") ~ "Europe"
+    )) %>%
+  select(site_source, label, avg_lat, avg_long, panel) %>%
+  unique() %>%
+  split(f = .$panel)
 
 
-lakes.ne <- readOGR(dsn = "../data", layer = "ne_50m_lakes") # Lives outside of FA repo
+# Read in and prepare spatial data
+lakes.ne <- readOGR(dsn = "../data", layer = "ne_50m_lakes")
 
-proj4string(lakes.ne) <- CRS("+proj=longlat +datum=WGS84") # MRB change - could use verification
-
-lakes.ne <- fortify(lakes.ne) # MRB unclear of purpose of this
-
+lakes.ne <- tidy(lakes.ne)
 
 
+# Make map ----------------------------------------------------------------
 
-##############################################################
-##                        Build map                         ##
-##############################################################
-
-# 1. Base map of world borders 
+# Base map of world borders 
 mapWorld <- borders("world", colour = "gray28", fill = "snow")
 
-mp <- ggplot(data = study_subset, aes(x = stationlong, y = stationlat))  +   mapWorld
-
-# Add GLWD lakes to world map
-mp <- mp + geom_polygon(aes(x = long, y = lat, group = group), fill = "lightblue1", color = "gray55", data = lakes.ne)
-
-
-mp
-
-
-mp.main <- mp #+  geom_point(shape = 21, color = "black", fill = "yellow", stroke = 1.5, size = 5.5)
-
-# Make oceans blue
-mp.main <- mp.main + 
-  ylab("") + 
-  xlab("") + 
+main_map <- ggplot() +
+  mapWorld +
+  geom_polygon(aes(x = long, y = lat, group = group),
+               fill = "lightblue1", color = "gray35", data = lakes.ne) +
+  ylab("") +
+  xlab("") +
+  theme_classic() +
   theme(panel.background = element_rect(fill = "lightblue1",
-                                        colour = "lightblue1"))
+                                        colour = "lightblue1"),
+        panel.grid = element_blank())
 
 # Create one map for North America and second for Europe  
-mp_NAm <-  mp.main + coord_equal(xlim = c(-115, -65), ylim = c(35, 60)) +xlab("Longitude")+ylab("Latitude")
-mp_Eur <-  mp.main + coord_equal(xlim = c(1, 36), ylim = c(40, 65))+xlab("Longitude")+ylab("Latitude")
+mp_NAm <- main_map +
+  geom_point(data = lake_locations[["North America A"]],
+             aes(x = avg_long, y = avg_lat,
+                 fill = site_source, shape = site_source),
+             size = 3, color = "gray35") +
+  geom_point(data = lake_locations[["North America B"]],
+             aes(x = avg_long, y = avg_lat,
+                 fill = site_source, shape = site_source),
+             size = 3, color = "gray35") +
+  coord_equal(xlim = c(-115, -65), ylim = c(35, 60)) +
+  scale_fill_manual(values = inferno(n = 2, begin = 0.4, end = 0.85)) +
+  scale_shape_manual(values = c(21, 24)) +
+  # One layer with a point that needs a segment
+  geom_text_repel(data = lake_locations[["North America A"]],
+                  aes(x = avg_long, y = avg_lat, label = label),
+                  min.segment.length = 0, nudge_x = -8, nudge_y = -2) +
+  # One layer with no segments needed
+  geom_text_repel(data = lake_locations[["North America B"]],
+                  aes(x = avg_long, y = avg_lat, label = label),
+                  seed = 46) +
+  theme(legend.position = "none", axis.text = element_text(size = 11)) 
+
+mp_Eur <- main_map +
+  geom_point(data = lake_locations[["Europe"]],
+             aes(x = avg_long, y = avg_lat,
+                 fill = site_source, shape = site_source),
+             size = 3, color = "gray35") +
+  coord_equal(xlim = c(1, 36), ylim = c(40, 65)) +
+  scale_fill_manual(values = inferno(n = 2, begin = 0.4, end = 0.85)) +
+  scale_shape_manual(values = c(21, 24)) +
+  geom_text_repel(data = lake_locations[["Europe"]],
+                  aes(x = avg_long, y = avg_lat, label = label),
+                  min.segment.length = 0, nudge_x = -7, nudge_y = 3) +
+  theme(legend.position = "none", axis.text = element_text(size = 11)) 
 
 
-# Plot both together
-combine_map <- plot_grid(mp_NAm, mp_Eur, nrow = 1, align = "h", rel_heights = c(1 ,1))
-#combine_map <- plot_grid(mp_NAm, mp_Eur, nrow = 1, align = "h", rel_heights = c(1 ,1))
+# Combine both maps
+combine_map <- ggarrange(mp_NAm, mp_Eur, ncol = 2, nrow = 1, align = "h")
+combine_annotate <- annotate_figure(p = combine_map,
+                                    left = "Latitude", bottom = "Longitude")
 
-combine_map
-
-
-png(file="map.png",res=500,units="in",width=8,height=3)
-#grid.arrange(mp_NAm,mp_Eur,ncol=2)
-plot_grid(mp_NAm, mp_Eur, nrow = 1, align = "h", rel_heights = c(1 ,1))
-#mp_NAm
-#mp.main
+# Preview figure
 dev.off()
+combine_annotate
+
+# Export
+ggsave(filename = "../Figures/map.png", plot = combine_annotate,
+       width = 8, height = 3, units = "in")
+
 
 
 
