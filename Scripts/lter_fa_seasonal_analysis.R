@@ -47,6 +47,7 @@ library(ggplot2)
 library(ggpubr)
 library(grid)
 library(gridExtra)
+library(boot)
 
 
 # read in LTER phyto data -------------------------------------------------
@@ -54,8 +55,8 @@ library(gridExtra)
 
 #read in, format dates so can stack ok 
 
-madison <- read.csv("../Data/ntl88_v7.csv", stringsAsFactors = FALSE) %>%
-  mutate(date = as.Date(sampledate, format = "%m/%d/%Y")) %>%
+madison <- read.csv("../Data/ntl88_v13.csv", stringsAsFactors = FALSE) %>%
+  mutate(date = ymd(sampledate)) %>%
   select(-sampledate)
 
 #only madison lakes have matching iceon/iceoff data
@@ -66,6 +67,8 @@ lter_lakes <- madison %>%
 lter_lakes <- lter_lakes %>%
   mutate(month = month(date),
          year = year(date)) %>%
+  group_by(date) %>%
+  # mutate(biomass_conc = cells_per_ml / sum(cells_per_ml, na.rm = TRUE)) %>%
   select(lakeid, year, month, date, sta, depth_range,
          division, genus, taxa_name, biomass_conc)
 
@@ -85,34 +88,48 @@ lter_lakes <- lter_lakes %>%
 
 # read in under ice data, for ice on/off timing ---------------------------
 
-seasons_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
+seasons_orig <- read.csv("../Data/ntl33_v12.csv", stringsAsFactors = FALSE)
 
 #keep only wisconsin, cols of interest, make start and end full dates
-seasons_wisc <- seasons_orig %>%
-  filter(lakeregloc == "Wisconsin") %>%
-  select(year, season, lakename, lakeregloc,
+iceon_dates <- seasons_orig %>%
+  mutate(iceoff_enddate = lead(ice_on, 1),
+         iceon_startdate = ice_on,
+         iceon_enddate = ice_off,
+         iceoff_startdate = ice_off) %>%
+  pivot_longer(cols = c(iceon_startdate, iceoff_startdate), names_to = "season", values_to = "startdate") %>%
+  select(lakeid, year, season, startdate) %>%
+  filter(year >= 1970) %>%
+  mutate(season = gsub(pattern = "_startdate", replacement = "", x = season))
+
+iceoff_dates <- seasons_orig %>%
+  mutate(iceoff_enddate = lead(ice_on, 1),
+         iceon_startdate = ice_on,
+         iceon_enddate = ice_off,
+         iceoff_startdate = ice_off) %>%
+  pivot_longer(cols = c(iceon_enddate, iceoff_enddate), names_to = "season", values_to = "enddate") %>%
+  select(lakeid, year, season, enddate) %>%
+  filter(year >= 1970) %>%
+  mutate(season = gsub(pattern = "_enddate", replacement = "", x = season))
+
+
+seasons_wisc <- left_join(x = iceon_dates, 
+                         y = iceoff_dates) %>%
+  mutate(lakeregloc = "Wisconsin",
+         startday = day(ymd(startdate)),
+         startmonth = month(ymd(startdate)),
+         startyear = year(ymd(startdate)),
+         endday = day(ymd(enddate)),
+         endmonth = month(ymd(enddate)),
+         endyear = year(ymd(enddate)),
+         lakename = ifelse(lakeid == "ME", "Mendota", NA),
+         lakename = ifelse(lakeid == "MO", "Monona", lakename)) %>%
+  select(year, season, lakename, lakeregloc, lakeid, 
          startday, startmonth, startyear,
-         endday, endmonth, endyear) %>% #,
-  #iceduration, periodn, photicdepth,
-  #icedepth, snowdepth, airtemp) %>%
-  mutate(startmonum = match(startmonth, month.abb),
-         endmonum = match(endmonth, month.abb)) %>%
-  mutate(startdate = paste(startyear, startmonum, startday, sep = "-"),
-         enddate = paste(endyear, endmonum, endday, sep = "-"))
+         endday, endmonth, endyear, startdate, enddate) %>% 
+  filter(lakeid %in% c("ME", "MO")) 
 
 #unique(seasons_wisc$lakename)
 #unique(lter_lakes$lakeid) %>% sort()
-
-#make lakeid to match
-seasons_lakes <- seasons_wisc %>%
-  mutate(lakeid = ifelse(lakename == "Lake Mendota", "ME", NA),
-         lakeid = ifelse(lakename == "Lake Monona", "MO", lakeid)) %>%
-  select(season, lakeid, year, startdate, enddate) %>%
-  filter(lakeid %in% c("ME", "MO"))
-
-# Note: we are losing the 2014/2015/2016 data by using this to subset
-# we may want to go back to raw LTER ice data to get 2014/2015/2016 iceon/iceoff dates
-
 
 
 # LTER ice duration data (for seasons) ------------------------------------
@@ -122,7 +139,7 @@ seasons_lakes <- seasons_wisc %>%
 #(which is problematic...)
 
 #read in LTER ice duration data
-duration <- read.csv("../Data/ntl33_v4.csv", stringsAsFactors = FALSE)
+duration <- read.csv("../Data/ntl33_v12.csv", stringsAsFactors = FALSE)
 
 #look like what we need
 head(duration)
@@ -132,23 +149,18 @@ duration_relevant <- duration %>%
   #only interested in Mendota, Monona
   filter(lakeid %in% c("ME", "MO")) %>%
   #can narrow down year range
-  filter(year4 >= 1990)
-
-#not sure what to do about this
-
-
+  filter(year >= 1990)
 
 # tag data with season ----------------------------------------------------
 
-
 lter_dates_only <- lter_lakes %>%
-  select(lakeid, year, date) %>%
+  select(lakeid, year, month, date) %>%
   unique() %>%
   rename(sample_year = year) %>%
   arrange(lakeid, sample_year)
 
 #make seasons wide format to can have column "start", "sample", and "end" dates
-seasons_lakes_wide <- seasons_lakes %>%
+seasons_lakes_wide <- seasons_wisc %>%
   melt(id.vars = c("lakeid", "year", "season"),
        variable.name = "category", value.name = "date") %>%
   mutate(seasons_category = paste(season, category, sep = "_")) %>%
@@ -174,9 +186,6 @@ lter_seasons <- lter_seasons_pre %>%
   select(lakeid, date, winter_yr, season) %>%
   merge(lter_lakes, by = c("lakeid", "date")) %>%
   select(-year)
-
-
-
 
 # aggregate samples to month ----------------------------------------------
 
@@ -261,7 +270,7 @@ lter_after_remove <- lter_month %>%
 
 #add a dry weight biomass column
 lter_use <- lter_after_remove %>%
-  mutate(biomass_dw = 0.20 * biomass_ww_m)
+  mutate(biomass_dw = 0.2 * biomass_ww_m)
 
 
 
@@ -322,9 +331,9 @@ fa_fix <- fa_fresh_prop_small %>%
                                         "Coscinodiscophyceae"),
                            "Bacillariophyta", GroupDiv))
 
-# fa_fix %>% select(Group, GroupDiv) %>% unique()
-# fa_fix %>% filter(GroupDiv %in% c("Bacillariophyta", "Xanthophyta")) %>% select(Group, Class, GroupDiv) %>% unique()
-# fa_fix %>% filter(GroupDiv == "Haptophyta") %>% select(Group, Class, Genus, GroupDiv) %>% unique()
+ fa_fix %>% select(Group, GroupDiv) %>% unique()
+ fa_fix %>% filter(GroupDiv %in% c("Bacillariophyta", "Xanthophyta")) %>% select(Group, Class, GroupDiv) %>% unique()
+ fa_fix %>% filter(GroupDiv == "Haptophyta") %>% select(Group, Class, Genus, GroupDiv) %>% unique()
 # #yes, works as it should
 
 
@@ -383,7 +392,14 @@ fa_groupdiv <- fa_fix %>%
   as.data.frame()
 
 
+unique_sp <- fa_fix %>%
+  select(GroupDiv, Genus, species) %>%
+  unique() %>%
+  unite(col = "gen_sp", c(Genus, species), sep = " ") %>%
+  group_by(GroupDiv) %>%
+  summarize(alt = paste(gen_sp, collapse = ", ")) 
 
+write.csv(x = unique_sp, "../Data/unique_species_fa.csv", row.names = FALSE)
 
 # aggregate biomass to GENUS ----------------------------------------------
 
@@ -505,7 +521,59 @@ tags_fa_NA <- lter_level_bm_tag %>%
 # --> merge together
 full_dat <- rbind(tags_fa_genus, tags_fa_groupdiv, tags_fa_NA)
 
+full_dat_spp_wide <- full_dat %>%
+  select(GroupDiv, lakeid, winter_yr, season, biomass_wet_weight) %>%
+  group_by(GroupDiv, lakeid, winter_yr, season) %>%
+  summarize(biomass_wet_weight = sum(biomass_wet_weight)) %>%
+  pivot_wider(names_from = GroupDiv, values_from = biomass_wet_weight) %>%
+  replace_na(list(Bacillariophyta = 0,
+                  Chlorophyta = 0,
+                  Chrysophyta = 0,
+                  Cryptophyta = 0,
+                  Cyanophyta = 0,
+                  Euglenophyta = 0,
+                  Haptophyta = 0,
+                  Miscellaneous = 0,
+                  Pyrrhophyta = 0,
+                  Rhodophyta = 0,
+                  Xanthophyta= 0))
 
+nmds <- vegan::metaMDS(comm = full_dat_spp_wide[ , c(4:10, 12:14)], distance = "bray", k = 2)
+
+vegan::adonis2(full_dat_spp_wide[ , c(4:10, 12:14)] ~ full_dat_spp_wide$season, permutations = 999, method = "bray")
+
+summary(vegan::simper(full_dat_spp_wide[ , c(4:10, 12:14)], group = full_dat_spp_wide$season, permutations = 999))
+
+
+# Pull scores from NMDS and add site data
+data_scores <- as.data.frame(scores(x = nmds)$sites)
+data_scores <- full_dat_spp_wide %>%
+  select(lakeid, winter_yr, season) %>%
+  bind_cols(., data_scores)
+
+# Pull species scores from NMDS
+species_scores <- as.data.frame(scores(x = nmds, display = "species"))
+species_scores$species <- rownames(species_scores)
+
+nmds_plot <- ggplot() +
+  geom_point(data = data_scores %>%
+               mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                                         season == "iceon" ~ "ice-covered")),
+             aes(x = NMDS1, y = NMDS2,
+                 color = season), size = 3) +
+  geom_text_repel(data = species_scores, 
+                  aes(x = NMDS1, y = NMDS2, label = species), 
+                  size = 10) + 
+  scale_colour_manual(values = viridis::plasma(10)[c(3, 7)]) +
+  guides(colour = guide_legend(override.aes = list(size = 10))) +
+  annotate("label", x = 0.5, y = 0.75, size = 10,
+           label = paste("Stress: ", round(nmds$stress, digits = 3))) +
+  theme_minimal() +
+  theme(legend.position = "right",
+        legend.key=element_blank(),
+        text = element_text(size = 24))
+
+ggsave(filename = "../Figures/nmds.png", plot = nmds_plot, width = 12, height = 8, units = "in", bg = "white")
 
 
 # weight FA profiles by biomass -------------------------------------------
@@ -670,13 +738,36 @@ full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_F
 full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_FA_long$variable == "PUFA_perc_avg")] <- "% PUFA"
 full_dat_weighted_yr_season_FA_long$variable[which(full_dat_weighted_yr_season_FA_long$variable =="SAFA_perc_avg")] <- "% SAFA"
 
-madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season, y = value)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
+mean.function <- function(x, index) {
+  d <- x[index]     # This first line will go in ever bootstrap function you make.
+  return(mean(d))  
+}
+
+madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long %>%
+                       group_by(season, variable) %>%
+                       nest() %>%
+                       mutate(bootstrap = map(.x = data, 
+                                              .f = ~ boot(data = .x$value, 
+                                                          statistic = mean.function,
+                                                          sim = "ordinary",
+                                                          R = 499)),
+                              boot_mean = map(.x = bootstrap, 
+                                              .f = ~ mean(.x$t, na.rm = TRUE)),
+                              first_quantile = map(.x = bootstrap, 
+                                                   .f = ~ quantile(.x$t, c(0.025))),
+                              last_quantile = map(.x = bootstrap, 
+                                                  .f = ~ quantile(.x$t, c(0.975)))) %>%
+                       select(-data, -bootstrap) %>%
+                       unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+                       mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                                                 season == "iceon" ~ "ice-covered"))) +
+  geom_point(aes(x = season, y = boot_mean), size = 6) +
+  geom_errorbar(aes(x = season,
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
   facet_wrap(~variable) +
   xlab("Season") + ylab("% of Total FA")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
   theme_bw() +
   theme(axis.title.y = element_text(size = rel(1.5)),
         axis.text = element_text(size = rel(1.5)),
@@ -684,6 +775,43 @@ madison_FA <- ggplot(data = full_dat_weighted_yr_season_FA_long, aes(x = season,
         legend.text = element_text(size = rel(1.5)),
         legend.title = element_text(size = rel(1.5)),
         strip.text.x = element_text(size = rel(1.5)))
+
+madison_FA <- ggplot(data = full_dat_weighted_month_season_FA %>%
+                       pivot_longer(cols = c(MUFA_perc_avg, PUFA_perc_avg, SAFA_perc_avg), names_to = "fa", values_to = "prop")%>%
+                       group_by(fa, month) %>%
+                       nest() %>%
+                       mutate(bootstrap = map(.x = data, 
+                                              .f = ~ boot(data = .x$prop, 
+                                                          statistic = mean.function,
+                                                          sim = "ordinary",
+                                                          R = 499)),
+                              boot_mean = map(.x = bootstrap, 
+                                              .f = ~ mean(.x$t, na.rm = TRUE)),
+                              first_quantile = map(.x = bootstrap, 
+                                                   .f = ~ quantile(.x$t, c(0.025))),
+                              last_quantile = map(.x = bootstrap, 
+                                                  .f = ~ quantile(.x$t, c(0.975)))) %>%
+                       select(-data, -bootstrap) %>%
+                       unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+                       mutate(fa = case_when(fa == "MUFA_perc_avg" ~ "% MUFA",
+                                             fa == "PUFA_perc_avg" ~ "% PUFA",
+                                             fa == "SAFA_perc_avg" ~ "% SAFA"))) +
+  geom_point(aes(x = as.factor(month), y = boot_mean), size = 6) +
+  geom_errorbar(aes(x = as.factor(month),
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
+  facet_wrap(~fa) +
+  xlab("Month") + ylab("% of Total FA")  +
+  theme_bw() +
+  theme(axis.title.y = element_text(size = rel(1.5)),
+        axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        legend.title = element_text(size = rel(1.5)),
+        strip.text.x = element_text(size = rel(1.5)))
+
+ggsave(filename = "../Figures/monthly_fas.png", plot = madison_FA, width = 12, height = 6, units = "in")
 
 
 #png(filename = "../Figures/Madison_FA_plot.png",
@@ -730,36 +858,95 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
          omega3_omega6_ratio = total_omega3 / total_omega6) #added by MRB on 6/4/18
 
 
-madison_omega_ratio_plot_3.6 <- ggplot(omegas_chains, aes(season, omega3_omega6_ratio)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
-  ylab("Omega 3:Omega 6 Ratio") + xlab("Season") +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+madison_omega_ratio_plot_3.6 <- ggplot(omegas_chains %>%
+                                         group_by(season) %>%
+                                         nest() %>%
+                                         mutate(bootstrap = map(.x = data, 
+                                                                .f = ~ boot(data = .x$omega3_omega6_ratio, 
+                                                                            statistic = mean.function,
+                                                                            sim = "ordinary",
+                                                                            R = 499)),
+                                                boot_mean = map(.x = bootstrap, 
+                                                                .f = ~ mean(.x$t, na.rm = TRUE)),
+                                                first_quantile = map(.x = bootstrap, 
+                                                                     .f = ~ quantile(.x$t, c(0.025))),
+                                                last_quantile = map(.x = bootstrap, 
+                                                                    .f = ~ quantile(.x$t, c(0.975)))) %>%
+                                         select(-data, -bootstrap) %>%
+                                         unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+                                         mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                                                                   season == "iceon" ~ "ice-covered"))) +
+  geom_point(aes(x = season, y = boot_mean), size = 6) +
+  geom_errorbar(aes(x = season,
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
+  ylab("\U03C9-3:\U03C9-6") +
   theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)))
+  theme(axis.text = element_text(size = 12),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 12))
 
+full_dat_weighted_yr_season_FA %>%
+  select(winter_yr, season, c18.2w6_perc_avg:c22.6w3_perc_avg) %>%
+  pivot_longer(cols = c(c18.2w6_perc_avg:c22.6w3_perc_avg), names_to = "efa", values_to = "prop") %>%
+  group_by(season, efa) %>%
+  nest() %>%
+  mutate(bootstrap = map(.x = data, 
+                         .f = ~ boot(data = .x$prop, 
+                                     statistic = mean.function,
+                                     sim = "ordinary",
+                                     R = 499)),
+         boot_mean = map(.x = bootstrap, 
+                         .f = ~ mean(.x$t, na.rm = TRUE)),
+         first_quantile = map(.x = bootstrap, 
+                              .f = ~ quantile(.x$t, c(0.025))),
+         last_quantile = map(.x = bootstrap, 
+                             .f = ~ quantile(.x$t, c(0.975)))) %>%
+  select(-data, -bootstrap) %>%
+  unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+  mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                            season == "iceon" ~ "ice-covered"),
+         efa = case_when(efa == "c18.2w6_perc_avg" ~ "18:2\u03C96",
+                         efa == "c18.3w6_perc_avg" ~ "18:3\u03C96",
+                         efa == "c18.3w3_perc_avg" ~ "18:3\u03C93",
+                         efa == "c18.4w3_perc_avg" ~ "18:4\u03C93",
+                         efa == "c18.5w3_perc_avg" ~ "18:5\u03C93",
+                         efa == "c20.4w6_perc_avg" ~ "20:4\u03C96",
+                         efa == "c20.5w3_perc_avg" ~ "20:5\u03C93",
+                         efa == "c22.6w3_perc_avg" ~ "22:6\u03C93")) %>%
+  ggplot() +
+  geom_point(aes(x = season, y = boot_mean), size = 3) +
+  geom_errorbar(aes(x = season,
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
+  ylab("% of Total FA") +
+  facet_wrap(~efa, scales = "free_y") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        legend.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        strip.text = ggtext::element_markdown(size = 16))
+
+ggsave("../Figures/efa_bootstrap.png", height = 8, width = 8, units = "in")
 
 #png(filename = "../Figures/madison_omega_ratio_plot_3v6.png", width = 3.75,
 #    height = 4, units = "in", res = 500)
 #madison_omega_ratio_plot_3.6
 #dev.off()
 
+madison_plots_prop <- ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
+                           ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
+                           widths = c(2,1))
 
-# Combine plots 3 + 4:
-# OPTION 1: Using ggarrange. Simple, but w/o shared x-axis.
-png(filename = "../Figures/madison-fa-omegas-combined.png", width = 9,
-    height = 3.75, units = "in", res = 500)
-ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
-          ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
-          widths = c(2,1))
-dev.off()
-
-
+madison_plots_bm <- ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
+                                ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
+                                widths = c(2,1))
 
 # OPTION 2: Using gridExtra. More complex, but with shared x-axis.
 #https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots

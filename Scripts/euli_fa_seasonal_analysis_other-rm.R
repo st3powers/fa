@@ -363,7 +363,6 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
   as.data.frame()
 
 
-head()
 
 write.csv(full_dat_weighted_comm_agg, "../Data/EULI_lake_seasonal_community_FAs.csv", row.names = FALSE)
 
@@ -392,14 +391,31 @@ full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$var
 
 
 euli_onelake_oneseason_onevalue <- 
-  ggplot(data = full_dat_weighted_comm_ag_long,
-         aes(x = season, y = value)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = season), width = 0.1, size = 1.5) +
+  ggplot(data = full_dat_weighted_comm_ag_long %>%
+           group_by(season, variable) %>%
+           nest() %>%
+           mutate(bootstrap = map(.x = data, 
+                                  .f = ~ boot(data = .x$value, 
+                                              statistic = mean.function,
+                                              sim = "ordinary",
+                                              R = 499)),
+                  boot_mean = map(.x = bootstrap, 
+                                  .f = ~ mean(.x$t, na.rm = TRUE)),
+                  first_quantile = map(.x = bootstrap, 
+                                       .f = ~ quantile(.x$t, c(0.025))),
+                  last_quantile = map(.x = bootstrap, 
+                                      .f = ~ quantile(.x$t, c(0.975)))) %>%
+           select(-data, -bootstrap) %>%
+           unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+           mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                                     season == "iceon" ~ "ice-covered"))) +
+  geom_point(aes(x = season, y = boot_mean), size = 6) +
+  geom_errorbar(aes(x = season,
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
   facet_wrap(~variable) +
-  ylab("% of Total FA") +
-  xlab("Season") +
-  scale_color_manual(name = "Season", values = c("royalblue3", "green3")) +
+  xlab("Season") + ylab("% of Total FA")  +
   theme_bw() +
   theme(axis.title.y = element_text(size = rel(1.5)),
         axis.text = element_text(size = rel(1.5)),
@@ -444,18 +460,36 @@ full_dat_agg_omegas <- full_dat_weighted_comm_agg %>%
          omega3_omega6_ratio = total_omega3 / total_omega6) 
 
 
-euli_omega_ratio_plot_3.6 <- ggplot(full_dat_agg_omegas, aes(season, omega3_omega6_ratio)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = season), width = 0.1, size = 1.5) +
-  ylab("Omega 3:Omega 6 Ratio") + xlab("Season") +
-  scale_color_manual(name = "Season", values = c("royalblue3", "green3")) +
-  #                   breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
+euli_omega_ratio_plot_3.6 <- ggplot(full_dat_agg_omegas %>%
+           group_by(season) %>%
+           nest() %>%
+           mutate(bootstrap = map(.x = data, 
+                                  .f = ~ boot(data = .x$omega3_omega6_ratio, 
+                                              statistic = mean.function,
+                                              sim = "ordinary",
+                                              R = 499)),
+                  boot_mean = map(.x = bootstrap, 
+                                  .f = ~ mean(.x$t, na.rm = TRUE)),
+                  first_quantile = map(.x = bootstrap, 
+                                       .f = ~ quantile(.x$t, c(0.025))),
+                  last_quantile = map(.x = bootstrap, 
+                                      .f = ~ quantile(.x$t, c(0.975)))) %>%
+           select(-data, -bootstrap) %>%
+           unnest(cols = c(boot_mean, first_quantile, last_quantile)) %>%
+           mutate(season = case_when(season == "iceoff" ~ "ice-free",
+                                     season == "iceon" ~ "ice-covered"))) +
+  geom_point(aes(x = season, y = boot_mean), size = 6) +
+  geom_errorbar(aes(x = season,
+                    ymin = first_quantile,
+                    ymax = last_quantile),
+                width = 0, lwd = 1) +
+  ylab("\U03C9-3:\U03C9-6") +
   theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)))
+  theme(axis.text = element_text(size = 12),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 12))
 
 
 #png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
@@ -507,4 +541,14 @@ ggplot(data = subset(dat_long_seasonal_points, dat_long_seasonal_points$FA_type 
   geom_point(aes(color = season)) +
   facet_wrap(~FA_type)
 
+### Adding in plots from LTER analysis
+
+euli_plots <- ggarrange(euli_onelake_oneseason_onevalue, euli_omega_ratio_plot_3.6,
+                        ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
+                        widths = c(2,1))
+
+combined_plots <- ggarrange(euli_plots, madison_plots_prop, madison_plots_bm,
+                            ncol = 1, nrow = 3, labels = "AUTO")
+
+ggsave(filename = "../Figures/boostrapped_fas.png", plot = combined_plots, height = 9, width = 14, units = "in")
 

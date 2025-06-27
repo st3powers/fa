@@ -76,6 +76,12 @@ lake_locations <- bind_rows(study_subset, ntl_sites) %>%
          (label == "7 lakes")) ~ "North America A",
       ((lakecountry %in% c("Canada", "USA")) &
         (label != "7 lakes")) ~ "North America B",
+      ((lakecountry %in% c("Canada", "USA")) &
+         (is.na(label)) & 
+         (site_source == "EULI")) ~ "North America C",
+      ((lakecountry %in% c("Canada", "USA")) &
+         (is.na(label)) & 
+         (site_source == "NTL")) ~ "North America B",
       lakecountry %in% c("Italy", "Finland", "Germany") ~ "Europe"
     )) %>%
   select(site_source, label, avg_lat, avg_long, panel) %>%
@@ -84,10 +90,7 @@ lake_locations <- bind_rows(study_subset, ntl_sites) %>%
 
 
 # Read in and prepare spatial data
-lakes.ne <- readOGR(dsn = "../data", layer = "ne_50m_lakes")
-
-lakes.ne <- tidy(lakes.ne)
-
+lakes.ne <- st_read("../Data/ne_50m_lakes.shp")
 
 # Make map ----------------------------------------------------------------
 
@@ -96,8 +99,7 @@ mapWorld <- borders("world", colour = "gray28", fill = "snow")
 
 main_map <- ggplot() +
   mapWorld +
-  geom_polygon(aes(x = long, y = lat, group = group),
-               fill = "lightblue1", color = "gray35", data = lakes.ne) +
+  geom_sf(fill = "lightblue1", color = "gray35", data = lakes.ne) +
   ylab("") +
   xlab("") +
   theme_classic() +
@@ -115,7 +117,11 @@ mp_NAm <- main_map +
              aes(x = avg_long, y = avg_lat,
                  fill = site_source, shape = site_source),
              size = 3, color = "gray35") +
-  coord_equal(xlim = c(-115, -65), ylim = c(35, 60)) +
+  geom_point(data = lake_locations[["North America C"]],
+             aes(x = avg_long, y = avg_lat,
+                 fill = site_source, shape = site_source),
+             size = 3, color = "gray35") +
+  coord_sf(xlim = c(-115, -65), ylim = c(35, 60)) +
   scale_fill_manual(values = inferno(n = 2, begin = 0.4, end = 0.85)) +
   scale_shape_manual(values = c(21, 24)) +
   # One layer with a point that needs a segment
@@ -133,7 +139,7 @@ mp_Eur <- main_map +
              aes(x = avg_long, y = avg_lat,
                  fill = site_source, shape = site_source),
              size = 3, color = "gray35") +
-  coord_equal(xlim = c(1, 36), ylim = c(40, 65)) +
+  coord_sf(xlim = c(1, 36), ylim = c(40, 65)) +
   scale_fill_manual(values = inferno(n = 2, begin = 0.4, end = 0.85)) +
   scale_shape_manual(values = c(21, 24)) +
   geom_text_repel(data = lake_locations[["Europe"]],
@@ -143,7 +149,7 @@ mp_Eur <- main_map +
 
 
 # Combine both maps
-combine_map <- ggarrange(mp_NAm, mp_Eur, ncol = 2, nrow = 1, align = "h")
+combine_map <- ggarrange(mp_NAm, mp_Eur, ncol = 2, nrow = 1, align = 'h')
 combine_annotate <- annotate_figure(p = combine_map,
                                     left = "Latitude", bottom = "Longitude")
 
@@ -152,8 +158,8 @@ dev.off()
 combine_annotate
 
 # Export
-ggsave(filename = "../Figures/map.png", plot = combine_annotate,
-       width = 8, height = 3, units = "in")
+ggsave(filename = "../Figures/map.png", plot = combine_map,
+       width = 8, height = 5, units = "in", bg = "white")
 
 
 
