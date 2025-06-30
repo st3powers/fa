@@ -304,7 +304,7 @@ library(ggpmisc)
 library(ggpubr)
 
 #**Read in ice phenology data----
-ice <- read_csv(here('2_data/ntl32_v8.csv')) %>% 
+ice <- read_csv('../Data/ntl32_v8.csv') %>% 
   mutate(
     lakeid = as.factor(lakeid)
   ) %>% 
@@ -478,7 +478,7 @@ par_snow_plt <- ggplot(data = light_snow, aes(x = avsnow, y = light))+
   geom_point(color = '#6495ED', alpha = 0.7)+
   theme_bw()+
   xlab('Snow Depth (cm)')+
-  ylab(~ paste(, "PAR ", '(',mu , " M ", 'm'^-2, ' s'^-1, ')'))+
+  ylab(~ paste(, "PAR ", '(',mu , "M ", 'm'^-2, ' s'^-1, ')'))+
   theme_bw()+
   facet_wrap(~lakename, scales = 'free', nrow = 2)+ #, scales = 'free'
   theme_classic()+
@@ -497,7 +497,7 @@ par_snow_plt <- ggplot(data = light_snow, aes(x = avsnow, y = light))+
 par_snow_plt  
 
 #**Save plot----
-#ggsave(here('4_figs/light_snow_log_pval_revised_2025.03.07.pdf'), dpi = 300, height = 8, width = 15, units = 'in')
+ggsave('../Figures/light_snow_log_pval_revised_2025.03.07.png', dpi = 300, height = 8, width = 15, units = 'in')
 
 
 # 2. Par~Snow: Summary stats from linear regression --------------------------
@@ -635,10 +635,10 @@ chl_light_plt <- ggplot(data = chl_a_iceon_log, aes(x = light, y = chlor))+
     axis.text.x = element_text(size = 15, hjust = 0.6),
     axis.text.y = element_text(size = 15)
   )+
-  eq(use_label('eq'), label.y = 0.99, label.x = 1)+
+  #eq(use_label('eq'), label.y = 0.99, label.x = 1)+
   stat_poly_eq(label.y = 0.98, label.x = 1)+
   geom_smooth(method = 'lm', color = 'grey50', alpha = 0.2)+
-  xlab(~ paste("PAR ", '(',mu , " M ", 'm'^-2, ' s'^-1, ')'))+
+  xlab(~ paste("PAR ", '(',mu , "M ", 'm'^-2, ' s'^-1, ')'))+
   ylab(~ paste('Chlorophyll ', italic('a '), '(', mu,'g ', 'L'^-1,')'))+
   scale_x_continuous(trans = 'log1p', breaks = c(0, 100, 900))+ #
   scale_y_continuous(trans = 'log1p', breaks = c(0, 5, 25, 100)) ##
@@ -647,13 +647,13 @@ chl_light_plt <- ggplot(data = chl_a_iceon_log, aes(x = light, y = chlor))+
 chl_light_plt  
 
 #**Save plot----
-# ggsave(
-#   here('4_figs/chl_par_log_r2_pval_nobox_2025.06.19.png'), 
-#   dpi = 300, 
-#   height = 8, 
-#   width = 15, 
-#   units = 'in'
-# )
+ggsave(
+  '../Figures/chl_par_log_r2_pval_nobox_2025.06.19.png',
+  dpi = 300,
+  height = 8,
+  width = 15,
+  units = 'in'
+)
 
 chl_light_tbl_test <- chl_a_iceon_log %>% 
   group_by(lakename) %>% 
