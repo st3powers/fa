@@ -1,8 +1,11 @@
-# Script to look at fatty acids profile under ice vs summer stratification
-# uses Hampton et al. ecology under lake ice dataset (ecology letters)
-# and Galloway et al PLoS one paper fatty acid dataset
+# ============================================================== #
+## ========================= OVERVIEW ========================= ##
+# ============================================================== #
 
-# ----> removes "other" phyto and finds new proportions
+# Looking at iceon/iceoff community FA profiles
+# Only using the Ecology Under Lake Ice dataset.
+# Using AG PLoS paper FA dataset, with some aggregation/crosswalking
+# to match EULI data.
 
 #libraries
 library(dplyr)
@@ -11,14 +14,14 @@ library(tidyr)
 library(ggplot2)
 library(grid)
 library(gridExtra)
+library(boot)
+library(purrr)
 
 # read in ecology under lake ice dataset and FA dataset -------------------
 
 euli_orig <- read.csv("../Data/under_ice_data.csv", stringsAsFactors = FALSE)
 
 fa_orig <- read.csv("../Data/PLoS_supp/S1_Dataset.csv", stringsAsFactors = FALSE)
-
-
 
 # wrangle ice phyto data --------------------------------------------------
 
@@ -259,13 +262,6 @@ full_dat <- merge(phyto_long_no_other, fa_group_avgs,
                   by.x = "phyto_group", by.y = "fa_group",
                   all.x = TRUE)
 
-# From LTER FA script:
-# What we want is "what are the average proportions of SAFA, MUFA, PUFA
-# present in the community, irrespective of total biomass?"
-# (i.e. we know there is higher biomass in summer - the Circus Circus buffet)
-# SH: pretty sure that what we want then is:(biomass_dry_weight * sumSAFA)/total dry weight
-# This is already a proportion (biomass/total) so can do prop * FA
-
 # weight data accordingly
 full_dat_weighted <- full_dat %>%
   # prop phyto (already biomass/total biomass) * prop FA
@@ -289,16 +285,6 @@ full_dat_weighted <- full_dat %>%
          prop_c20.4w6, prop_c20.5w3,
          prop_c22.6w3)
 
-# full_dat_weighted %>%
-#   group_by(lakename, year, season) %>%
-#   summarize(totSAFA = sum(sumSAFA_prop, na.rm = TRUE),
-#             totMUFA = sum(sumMUFA_prop, na.rm = TRUE),
-#             totPUFA = sum(sumPUFA_prop, na.rm = TRUE),
-#             total = totSAFA + totMUFA + totPUFA) %>%
-#   as.data.frame() %>%
-#   summary()
-
-
 # sum within lake/time point (get community-level FA)
 full_dat_weighted_comm <- full_dat_weighted %>%
   group_by(lakename, year, season) %>%
@@ -315,14 +301,6 @@ full_dat_weighted_comm <- full_dat_weighted %>%
             perc_c20.5w3 = sum(prop_c20.5w3, na.rm = TRUE),
             perc_c22.6w3 = sum(prop_c22.6w3, na.rm = TRUE)) %>%
   as.data.frame()
-
-# full_dat_weighted_comm %>%
-#   mutate(total_FA = MUFA_perc + PUFA_perc + SAFA_perc) %>%
-#   summary()
-# like above, ranges from ~97 to 99, good
-
-# this format matches LTER_FA_20180217
-# (detailed look at lakes ME/MO)
 
 head(full_dat_weighted_comm)
 
@@ -367,15 +345,6 @@ full_dat_weighted_comm_agg <- full_dat_weighted_comm %>%
 write.csv(full_dat_weighted_comm_agg, "../Data/EULI_lake_seasonal_community_FAs.csv", row.names = FALSE)
 
 
-###########################
-# Section started 2018 May 30, SP and MB. Previously this contained 
-# "lakes aggregated to seasons across years" section
-# but we deleted that and started this section.
-
-
-full_dat_weighted_comm_agg
-
-
 full_dat_weighted_comm_ag_long <- melt(data = full_dat_weighted_comm_agg,
      # same as section below but selecting fewer vars
      measure.vars = c("seasonal_avg__MUFA_perc",
@@ -388,7 +357,10 @@ full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$var
 full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$variable == "seasonal_avg__PUFA_perc")] <- "% PUFA"
 full_dat_weighted_comm_ag_long$variable[which(full_dat_weighted_comm_ag_long$variable == "seasonal_avg__SAFA_perc")] <- "% SAFA"
 
-
+mean.function <- function(x, index) {
+  d <- x[index]     # This first line will go in ever bootstrap function you make.
+  return(mean(d))  
+}
 
 euli_onelake_oneseason_onevalue <- 
   ggplot(data = full_dat_weighted_comm_ag_long %>%
@@ -423,11 +395,6 @@ euli_onelake_oneseason_onevalue <-
         legend.text = element_text(size = rel(1.5)),
         legend.title = element_text(size = rel(1.5)),
         strip.text.x = element_text(size = rel(1.5)))
-
-#png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
-#    width = 4, height = 2.5, units = "in", res = 500)
-#euli_onelake_oneseason_onevalue
-#dev.off()
 
 full_dat_agg_omegas <- full_dat_weighted_comm_agg %>%
   #total omega 3 prop of PUFAs
@@ -492,63 +459,9 @@ euli_omega_ratio_plot_3.6 <- ggplot(full_dat_agg_omegas %>%
         legend.text = element_text(size = 12))
 
 
-#png(filename = "../Figures/euli_onelake_oneseason_onevalue.png",
-#    width = 4, height = 2.5, units = "in", res = 500)
-#euli_onelake_oneseason_onevalue
-#dev.off()
-#https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
-p1 <- euli_onelake_oneseason_onevalue + xlab(label = "")
-p2 <- euli_omega_ratio_plot_3.6 + xlab(label = "")
-
-#extract legend
-#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
-g_legend<-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)}
-
-mylegend<-g_legend(p1)
-
-png(filename = "../Figures/euli-fa-omegas-combined_sharedX.png", width = 9,
-    height = 4, units = "in", res = 500)
-grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
-                         p2 + theme(legend.position="none"),
-                         nrow=1, widths = c(2,1)),
-             mylegend, nrow=1, widths = c(5,1),
-             bottom = textGrob("Season", vjust = -1,
-                               gp = gpar(fontface = "bold", cex = 1.35)))
-dev.off()
-
-
-###########################
-
-# checking for consistency with Labou aggregtion method??
-
-dat_long_seasonal_points <- full_dat_weighted_comm_agg %>%
-  # make long
-  melt(id.vars = c("lakename", "season", "n_years")) %>%
-  # split variable column name
-  separate(variable, into = c("agg_type", "FA_type"), sep = "__") %>%
-  # make wide so have column for avg and sd
-  dcast(lakename + season + n_years + FA_type ~ agg_type, value.var = "value")
-
-
-ggplot(data = subset(dat_long_seasonal_points, dat_long_seasonal_points$FA_type %in%
-                       c("MUFA_perc", "PUFA_perc", "SAFA_perc")),
-       aes(x = season, y = seasonal_avg)) +
-  geom_boxplot() +
-  geom_point(aes(color = season)) +
-  facet_wrap(~FA_type)
-
-### Adding in plots from LTER analysis
-
 euli_plots <- ggarrange(euli_onelake_oneseason_onevalue, euli_omega_ratio_plot_3.6,
                         ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
                         widths = c(2,1))
 
-combined_plots <- ggarrange(euli_plots, madison_plots_prop, madison_plots_bm,
-                            ncol = 1, nrow = 3, labels = "AUTO")
-
-ggsave(filename = "../Figures/boostrapped_fas.png", plot = combined_plots, height = 9, width = 14, units = "in")
+ggsave(filename = "../Figures/boostrapped_fas.png", plot = euli_plots)
 

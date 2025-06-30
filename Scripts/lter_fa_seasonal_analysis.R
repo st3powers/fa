@@ -28,7 +28,6 @@
 #     (genus-level FA, independent of biomass)
 # 13) aggregated weighted to community level 
 # 14) plotted MUFA/PUFA/SAFA by Lake & Season; plotted Omega3:6 by Lake & Season
-# 15) read in FA Secchi data and plot PUFA/SAFA ~ Secchi
 
 
 
@@ -81,10 +80,6 @@ lter_lakes <- lter_lakes %>%
 # biomass concentration of one milligramPerLiter."
 # https://lter.limnology.wisc.edu/dataset/north-temperate-lakes-lter-phytoplankton-madison-lakes-area-1995-current
 
-# SP: When we assume density of 1g/mL for phyto cells then we get units of mg/L
-# according to the LTER metadata. Then multiplying by (0.2 mg dry)/(1 mg wet) we
-# end up with mg/L dry weight.
-
 
 # read in under ice data, for ice on/off timing ---------------------------
 
@@ -127,9 +122,6 @@ seasons_wisc <- left_join(x = iceon_dates,
          startday, startmonth, startyear,
          endday, endmonth, endyear, startdate, enddate) %>% 
   filter(lakeid %in% c("ME", "MO")) 
-
-#unique(seasons_wisc$lakename)
-#unique(lter_lakes$lakeid) %>% sort()
 
 
 # LTER ice duration data (for seasons) ------------------------------------
@@ -584,13 +576,6 @@ ggsave(filename = "../Figures/nmds.png", plot = nmds_plot, width = 12, height = 
 
 # What we want is "what are the average proportions of SAFA, MUFA, PUFA
 # present in the community, irrespective of total biomass?"
-# (i.e. we know there is higher biomass in summer - the Circus Circus buffet)
-# SH: pretty sure that what we want then is:(biomass_dry_weight * sumSAFA)/total dry weight
-
-# MRB Note 8/30/18: Not sure that it's totally clear what's going on with 
-# full_dat_weighted below...It seems to be making percentages (e.g. 47.3%) 
-# as opposed to a proportion (e.g. 0.473). Just make sure that it's doing 
-# what is expected/described.
 
 
 full_dat_weighted <- full_dat %>%
@@ -598,10 +583,6 @@ full_dat_weighted <- full_dat %>%
   group_by(lakeid, winter_yr, season, month) %>%
   mutate(sample_date_dry_weight_total = sum(biomass_dry_weight)) %>%
   ungroup() %>%
-  #weight FA by biomass - per row (genus within sample date)
-  #if FA is % dry weight, then FA * dry weight = biomass of that FA
-  #here, sample_date_dry_weight_total is community-level biomass
-  #FA props are genus-level
   mutate(sumSAFA_prop = (biomass_dry_weight * sumSAFA) / sample_date_dry_weight_total,
          sumMUFA_prop = (biomass_dry_weight * sumMUFA) / sample_date_dry_weight_total,
          sumPUFA_prop = (biomass_dry_weight * sumPUFA) / sample_date_dry_weight_total,
@@ -615,7 +596,6 @@ full_dat_weighted <- full_dat %>%
          c22.6w3_prop = (biomass_dry_weight * c22.6w3) / sample_date_dry_weight_total) %>%
   as.data.frame()
 
-#filter(full_dat_weighted, lakeid == "MO" & winter_yr == 2002 & month == 8)
 
 #keep only columns of interest
 full_dat_weighted_small <- full_dat_weighted %>%
@@ -627,14 +607,6 @@ full_dat_weighted_small <- full_dat_weighted %>%
 
 #write to csv
 write.csv(full_dat_weighted_small, "../Data/LTER_madison_FA_weighted_groupdiv.csv", row.names = FALSE)
-
-#this is basically saying:
-#for each time point, a genus has some proportion FAs
-#we want to aggregate to community, then to season
-
-#ADD UP all MUFA/PUFA/SAFA within a community
-#to get community-level amount
-#I have proved to myself using pen, paper, and basic algebra that this will work
 
 full_dat_weighted_date_FA <- full_dat_weighted_small %>%
   #get community-level FA props for each time point
@@ -653,15 +625,6 @@ full_dat_weighted_date_FA <- full_dat_weighted_small %>%
   as.data.frame()
 
 # summary(full_dat_weighted_date_FA)
-
-# #now aggregate to season - find average MUFA/PUFA/SAFA profile for each season (all years, boths lakes)
-# full_dat_weighted_date_FA %>%
-#   group_by(season) %>%
-#   summarize(MUFA_perc_avg = mean(MUFA_perc),
-#             PUFA_perc_avg = mean(PUFA_perc),
-#             SAFA_perc_avg = mean(SAFA_perc)) %>%
-#   as.data.frame()
-# #doesn't quite add up to 100%, more like 95%, but not unexpected since on average
 
 #aggregate to lake/month/year/season
 full_dat_weighted_month_season_FA <- full_dat_weighted_date_FA %>%
@@ -696,16 +659,11 @@ full_dat_weighted_yr_season_FA <- full_dat_weighted_date_FA %>%
             c20.5w3_perc_avg = mean(c20.5w3_perc, na.rm = TRUE),
             c22.6w3_perc_avg = mean(c22.6w3_perc, na.rm = TRUE)) %>%
   as.data.frame()
-#note: doesn't add up to quite 100% (working with averages)
-#also, data only goes to 2013 (may need to adjust iceon/iceoff dates from raw LTER snow/ice data)
 
 summary(full_dat_weighted_yr_season_FA)
-#MUFA: 11-36
-#PUFA: 24-61
-#SAFA: 22-47
 
 #write to csv
-#write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
+write.csv(full_dat_weighted_yr_season_FA, "../Data/LTER_Madison_weighted_year_season_FA.csv", row.names = FALSE)
 
 
 
@@ -714,18 +672,8 @@ summary(full_dat_weighted_yr_season_FA)
 # END OF DATA WRANGLING - ANALYSIS BEGINS ---------------------------------
 # ============================================================== #
 
-
-#Note ~ 150 lines of code removed starting here compared with version in LTER_FA_20180217.R
-
-# LTER_Madison_weighted_year_season_FA<-read.csv("../Data/LTER_Madison_weighted_year_season_FA.csv") #this appears to be the same as full_dat_weighted_yr_season_FA
-
-
-#MRB edits below:
-
 View(full_dat_weighted_yr_season_FA)
 
-
-#Figure 3 + 4 (combined):
 
 full_dat_weighted_yr_season_FA_long <- melt(data = full_dat_weighted_yr_season_FA,
                                             measure.vars = c("MUFA_perc_avg",
@@ -814,16 +762,6 @@ madison_FA <- ggplot(data = full_dat_weighted_month_season_FA %>%
 ggsave(filename = "../Figures/monthly_fas.png", plot = madison_FA, width = 12, height = 6, units = "in")
 
 
-#png(filename = "../Figures/Madison_FA_plot.png",
-#    width = 4, height = 2.5, units = "in", res = 500)
-#madison_FA
-#dev.off()
-
-
-#Figure 4: 
-
-#Taken from old version of script
-
 omegas_chains <- full_dat_weighted_yr_season_FA %>%
   #total omega 3 prop of PUFAs
   mutate(total_omega3 = c18.3w3_perc_avg +
@@ -846,14 +784,7 @@ omegas_chains <- full_dat_weighted_yr_season_FA %>%
            c20.5w3_perc_avg +
            c22.6w3_perc_avg) %>%
   mutate(omega6_omega3_ratio = total_omega6 / total_omega3,
-         #may want just long chain PUFA down the road (%)
-         
-         # Is this line of code correct? 
          longchainPUFA = (total_long_chain * PUFA_perc_avg) / 100,
-         
-         #total long chain is % of PUFAs that are long chain
-         #divide by PUFAs prop to get ratio with SAFA
-         #(i.e., proportion of ALL FATTY ACIDS that are long chain PUFAs compared to SAFA prop)
          longchainPUFA_SAFA = longchainPUFA / SAFA_perc_avg,
          omega3_omega6_ratio = total_omega3 / total_omega6) #added by MRB on 6/4/18
 
@@ -935,11 +866,6 @@ full_dat_weighted_yr_season_FA %>%
 
 ggsave("../Figures/efa_bootstrap.png", height = 8, width = 8, units = "in")
 
-#png(filename = "../Figures/madison_omega_ratio_plot_3v6.png", width = 3.75,
-#    height = 4, units = "in", res = 500)
-#madison_omega_ratio_plot_3.6
-#dev.off()
-
 madison_plots_prop <- ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
                            ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
                            widths = c(2,1))
@@ -947,263 +873,3 @@ madison_plots_prop <- ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
 madison_plots_bm <- ggarrange(madison_FA, madison_omega_ratio_plot_3.6,
                                 ncol = 2, nrow = 1, common.legend = TRUE, legend = "right",
                                 widths = c(2,1))
-
-# OPTION 2: Using gridExtra. More complex, but with shared x-axis.
-#https://stackoverflow.com/questions/13649473/add-a-common-legend-for-combined-ggplots
-p1 <- madison_FA + xlab(label = "")
-p2 <- madison_omega_ratio_plot_3.6 + xlab(label = "")
-
-#extract legend
-#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
-g_legend<-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)}
-
-mylegend<-g_legend(p1)
-
-png(filename = "../Figures/madison-fa-omegas-combined_sharedX.png", width = 9,
-    height = 4, units = "in", res = 500)
-grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
-                         p2 + theme(legend.position="none"),
-                         nrow=1, widths = c(2,1)),
-             mylegend, nrow=1, widths = c(5,1),
-             bottom = textGrob("Season", vjust = -1,
-                               gp = gpar(fontface = "bold", cex = 1.35)))
-dev.off()
-
-# Long chain/short chain
-long_chain_season <- ggplot(data = omegas_chains,
-                            aes(x = season, y = total_long_chain)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
-  xlab("") +
-  ylab("% Long Chain PUFA")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
-  theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)),
-        strip.text.x = element_text(size = rel(1.5)))
-
-short_chain_season <- ggplot(data = omegas_chains,
-                             aes(x = season, y = total_short_chain)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
-  xlab("") +
-  ylab("% Short Chain PUFA")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
-  theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)),
-        strip.text.x = element_text(size = rel(1.5)))
-
-
-# EPA c20.5w3_perc_avg
-EPA_chain_season <- ggplot(data = omegas_chains,
-                           aes(x = season, y = c20.5w3_perc_avg)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
-  xlab("") +
-  ylab("% EPA (c20.5w3)")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
-  theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)),
-        strip.text.x = element_text(size = rel(1.5)))
-
-# DHA c22.6w3_perc_avg
-DHA_chain_season <- ggplot(data = omegas_chains,
-                           aes(x = season, y = c22.6w3_perc_avg)) +
-  geom_boxplot(outlier.shape = "") +
-  geom_jitter(aes(color = lakeid), width = 0.1, size = 1.5) +
-  xlab("") +
-  ylab("% DHA (c22.6w3)")  +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3"),
-                     breaks = c("ME", "MO"), labels = c("Mendota", "Monona")) +
-  theme_bw() +
-  theme(axis.title.y = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        axis.title.x = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)),
-        strip.text.x = element_text(size = rel(1.5)))
-
-pufa_breakdown <- ggarrange(long_chain_season, short_chain_season,
-                            EPA_chain_season, DHA_chain_season,
-                            common.legend = TRUE, legend = "right") %>%
-  annotate_figure(bottom = text_grob("Season", size = 18))
-
-ggsave(filename = "../Figures/pufa_breakdown_seasonal_MEMO.png",
-       plot = pufa_breakdown, device = "png", width = 10, height = 8)
-
-
-######################
-# fa ~ secchi
-
-fa_secchi <- read.csv("../Data/fa_secchi_data.csv", stringsAsFactors = FALSE)
-fa_secchi$winter_yr2 <- substr(fa_secchi$winter_yr, 3, 4)
-fa_secchi$winter_yr2[which(fa_secchi$season == "iceoff")] <- ""
-fa_secchi$fill <- "Y"
-fa_secchi$fill[which(fa_secchi$season == "iceoff")] <- "N"
-
-fa_secchi$omega3<-fa_secchi$c18.3w3_perc_avg + fa_secchi$c18.4w3_perc_avg +
-  fa_secchi$c18.5w3_perc_avg + fa_secchi$c20.5w3_perc_avg +
-  fa_secchi$c22.6w3_perc_avg
-
-fa_secchi$omega6 = fa_secchi$c18.2w6_perc_avg + fa_secchi$c18.3w6_perc_avg + 
-  fa_secchi$c20.4w6_perc_avg
-fa_secchi$omega6omega3ratio<-fa_secchi$omega6/fa_secchi$omega3
-fa_secchi$omega3omega6ratio<-fa_secchi$omega3/fa_secchi$omega6
-
-
-
-#fa_secchi$shape<-24
-#fa_secchi$shape[which(fa_secchi$season=="iceoff")]<-20
-
-#seasonal patterns
-
-#PUFA/SAFA vs SECCHI
-pufasafa_secchi_MEMO_oneseason_onevalue <- ggplot(
-  data = filter(fa_secchi, season == "iceon"),
-  aes(x = mean_secnview,
-      y = (PUFA_perc_avg / SAFA_perc_avg))) +
-  geom_point(size=3, aes(
-    # shape = season,
-    colour = lakeid)) +
-  ylab("PUFA/SAFA ratio") +
-  xlab("") +
-  # scale_shape_manual(name = "Season", values = c(0, 16)) +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 11),
-        axis.title = element_text(size = 14),
-        legend.text = element_text(size = 11),
-        legend.title = element_text(size = 13))
-
-pufa_secchi_MEMO_oneseason_onevalue <- ggplot(
-  data = filter(fa_secchi, season == "iceon"),
-  
-  aes(x = mean_secnview,
-      y = (PUFA_perc_avg))) +
-  geom_point(size=3, aes(
-    # shape = season,
-    colour = lakeid)) +
-  ylab("PUFA (% of total FA)") +
-  xlab("") +
-  # scale_shape_manual(name = "Season", values = c(0, 16)) +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 11),
-        axis.title = element_text(size = 14),
-        legend.text = element_text(size = 11),
-        legend.title = element_text(size = 13))
-
-omega63ratio_secchi_MEMO_oneseason_onevalue <- ggplot(
-  data = filter(fa_secchi, season == "iceon"),
-  aes(x = mean_secnview,
-      y = (omega6omega3ratio))) +
-  geom_point(size=3, aes(
-    #shape = season ,
-    colour = lakeid)) +
-  ylab("omega 6:3 ratio") +
-  xlab("") +
-  # scale_shape_manual(name = "Season", values = c(0, 16)) +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 11),
-        axis.title = element_text(size = 14),
-        legend.text = element_text(size = 11),
-        legend.title = element_text(size = 13))
-
-omega36ratio_secchi_MEMO_oneseason_onevalue <- ggplot(
-  data = filter(fa_secchi, season == "iceon"),
-  aes(x = mean_secnview,
-      y = (omega3omega6ratio))) +
-  geom_point(size=3, aes(
-    # shape = season,
-    colour = lakeid)) +
-  ylab("omega 3:6 ratio") +
-  xlab("") +
-  # scale_shape_manual(name = "Season", values = c(0, 16)) +
-  scale_color_manual(name = "Lake ID", values = c("royalblue3", "green3")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 11),
-        axis.title = element_text(size = 14),
-        legend.text = element_text(size = 11),
-        legend.title = element_text(size = 13))
-
-fig_grid <- ggarrange(plotlist = list(pufa_secchi_MEMO_oneseason_onevalue,
-                                      pufasafa_secchi_MEMO_oneseason_onevalue,
-                                      omega63ratio_secchi_MEMO_oneseason_onevalue,
-                                      omega36ratio_secchi_MEMO_oneseason_onevalue),
-                      common.legend = TRUE, legend = "right") %>%
-  annotate_figure(bottom = text_grob("Secchi Depth (m)", size = 14))
-
-ggsave(filename = "../Figures/fa_vs_secchi_grid.png", plot = fig_grid,
-       width = 8.25, height = 7.5, units = "in", device = "png")
-
-
-# If saving individual figures:
-
-# png(filename = "../Figures/pufa_secchi_MEMO_oneseason_onevalue.png",
-#     width = 4, height = 3, units = "in", res = 500)
-# pufa_secchi_MEMO_oneseason_onevalue
-# dev.off()
-# 
-# png(filename = "../Figures/pufasafa_secchi_MEMO_oneseason_onevalue.png",
-#     width = 4, height = 3, units = "in", res = 500)
-# pufasafa_secchi_MEMO_oneseason_onevalue
-# dev.off()
-# 
-# png(filename = "../Figures/omega6_omega3_ratio_MEMO_oneseason_onevalue.png",
-#     width = 4, height = 3, units = "in", res = 500)
-# omega63ratio_secchi_MEMO_oneseason_onevalue
-# dev.off()
-# 
-# png(filename = "../Figures/omega3_omega6_ratio_MEMO_oneseason_onevalue.png",
-#     width = 4, height = 3, units = "in", res = 500)
-# omega36ratio_secchi_MEMO_oneseason_onevalue
-# dev.off()
-
-
-
-
-#EPA:ALA VS SECCHI - MM suggested but then said not to use, retaining for now
-#fasecchi_MEMO_oneseason_onevalue_20p5_18p3<-ggplot(fa_secchi, aes(x=mean_secnview, y=(c20.5w3_perc_avg/(c18.3w3_perc_avg)))) +
-#  geom_point(size=3, aes(shape = season , colour= lakeid)) +
-#  ylab("EPA/ALA Ratio") +
-#  xlab("Secchi Depth (m)") +
-#  scale_shape_manual(name = "Season", values=c(0,16)) +
-#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
-#  theme_bw()
-
-#png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_EPA-ALA.png",width = 4, height = 3, units = "in", res = 500)
-#fasecchi_MEMO_oneseason_onevalue_20p5_18p3
-#dev.off()
-
-#EPA:SDA VS SECCHI - MM suggested but then said not to use, retaining for now
-#fasecchi_MEMO_oneseason_onevalue_20p5_18p4<-ggplot(fa_secchi, aes(x=mean_secnview, y=(c20.5w3_perc_avg/(c18.4w3_perc_avg)))) +
-#  geom_point(size=3, aes(shape = season , colour= lakeid)) +
-#  ylab("EPA/SDA Ratio") +
-#  xlab("Secchi Depth (m)") +
-#  scale_shape_manual(name = "Season", values=c(0,16)) +
-#  scale_color_manual(name = "Lake ID", values = c("royalblue3","green3")) +
-#  theme_bw()
-
-#png(filename = "../Figures/fasecchi_MEMO_oneseason_onevalue_EPA-SDA.png",width = 4, height = 3, units = "in", res = 500)
-#fasecchi_MEMO_oneseason_onevalue_20p5_18p4
-#dev.off()
-
